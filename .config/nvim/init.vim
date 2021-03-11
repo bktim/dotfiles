@@ -1,5 +1,5 @@
-set noerrorbells
-set tabstop=4 softtabstop=4
+set tabstop=4 
+set softtabstop=4
 set shiftwidth=4
 set expandtab
 set smartindent
@@ -16,6 +16,7 @@ set nohlsearch
 set spelllang=en
 set hidden
 set scrolloff=8
+set laststatus=2
 "set colorcolumn=80
 
 
@@ -30,8 +31,9 @@ Plug 'morhetz/gruvbox'
 Plug 'mbbill/undotree'
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-fugitive'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
-" Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 call plug#end()
 
 colorscheme gruvbox
@@ -45,3 +47,7 @@ nnoremap <leader>l :wincmd l<CR>
 
 nnoremap <F5> :UndotreeToggle<CR>
 nnoremap <C-P> :FZF<CR>
+
+nnoremap <leader>gs :Git<CR>
+
+" set statusline+=%{FugitiveStatusline()}
