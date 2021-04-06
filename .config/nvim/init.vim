@@ -9,7 +9,7 @@ set ignorecase
 set smartcase
 set noswapfile
 set nobackup
-set undodir=~/.vim/undodir
+set undodir=~/.config/nvim/undodir
 set undofile
 set incsearch
 set nohlsearch
@@ -19,7 +19,7 @@ set scrolloff=8
 set laststatus=2
 "set colorcolumn=80
 
-
+hello
 let mapleader = "\<Space>" 
 let g:netrw_browse_split=3
 let g:netrw_banner = 0
