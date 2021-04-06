@@ -19,19 +19,21 @@ set scrolloff=8
 set laststatus=2
 "set colorcolumn=80
 
-hello
 let mapleader = "\<Space>" 
 let g:netrw_browse_split=3
 let g:netrw_banner = 0
 let g:netrw_winsize = 25
 
-let autoload_plug_path = stdpath('data') . '/site/autoload/plug.vim'
-if !filereadable(autoload_plug_path)
-  silent execute '!curl -fLo ' . autoload_plug_path . '  --create-dirs 
-      \ "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"'
-  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+" Install vim-plug if not found
+if empty(glob('~/.config/nvim/autoload/plug.vim'))
+  silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 endif
-unlet autoload_plug_path
+
+" Run PlugInstall if there are missing plugins
+autocmd VimEnter * if len(filter(values(g:plugs), '!isdirectory(v:val.dir)'))
+  \| PlugInstall --sync | source $MYVIMRC
+\| endif
 
 call plug#begin('~/.config/nvim/plugged')
 
