@@ -15,3 +15,6 @@ config config --local status.showUntrackedFiles no
 # for tmux plugin manager
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ```
+
+Ensure these tools are installed
+* ripgrep
