@@ -87,6 +87,7 @@ local on_attach = function(client, bufnr)
   -- Mappings.
   local opts = { noremap=true, silent=true }
 
+
   -- See `:help vim.lsp.*` for documentation on any of the below functions
   buf_set_keymap('n', 'gD', '<Cmd>lua vim.lsp.buf.declaration()<CR>', opts)
   buf_set_keymap('n', 'gd', '<Cmd>lua vim.lsp.buf.definition()<CR>', opts)
@@ -110,15 +111,6 @@ end
 
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
-local servers = { "pyright" }
-for _, lsp in ipairs(servers) do
-  nvim_lsp[lsp].setup {
-    on_attach = on_attach,
-    flags = {
-      debounce_text_changes = 150,
-    }
-  }
-end
 EOF
 
 lua << EOF
@@ -149,6 +141,10 @@ require('telescope').setup {
 -- load_extension, somewhere after setup function:
 require('telescope').load_extension('fzy_native')
 EOF
+
+lua require'lspconfig'.bashls.setup{}
+lua require'lspconfig'.pyright.setup{}
+
 
 autocmd FileType yaml setlocal ts=4 sts=4 sw=4 expandtab
 

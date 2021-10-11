@@ -18,3 +18,10 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 Ensure these tools are installed
 * ripgrep
+
+
+Install LSPs
+```bash
+npm i -g bash-language-server
+npm i -g pyright
+```
