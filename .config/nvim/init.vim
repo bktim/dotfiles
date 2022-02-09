@@ -3,7 +3,7 @@ set softtabstop=4
 set shiftwidth=4
 set expandtab
 set smartindent
-set number relativenumber
+set number
 set nowrap
 set ignorecase
 set smartcase
@@ -40,19 +40,21 @@ autocmd VimEnter * if len(filter(values(g:plugs), '!isdirectory(v:val.dir)'))
 call plug#begin('~/.config/nvim/plugged')
 Plug 'morhetz/gruvbox'
 Plug 'mbbill/undotree'
-Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-fugitive'
-" Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-lua/completion-nvim'
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
-" Plug 'nvim-telescope/telescope-fzy-native.nvim'
 Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
+Plug 'tell-k/vim-autopep8'
 
-" Plug 'hrsh7th/vim-vsnip'
+" LSP + completion
+Plug 'neovim/nvim-lspconfig'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " run :TSInstall python etc.
+Plug 'hrsh7th/nvim-cmp'
+" Python
+Plug 'heavenshell/vim-pydocstring', {'do': 'make install', 'for': 'python' }  
+
 call plug#end()
 
 if exists('+termguicolors')
@@ -71,49 +73,6 @@ set completeopt=menuone,noselect
 "
 let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
 let g:completion_matching_smart_case = 1
-
-lua << EOF
-local nvim_lsp = require('lspconfig')
-
--- Use an on_attach function to only map the following keys
--- after the language server attaches to the current buffer
-local on_attach = function(client, bufnr)
-  local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
-  local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
-  require'completion'.on_attach()
-
-
-  --Enable completion triggered by <c-x><c-o>
-  buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
-
-  -- Mappings.
-  local opts = { noremap=true, silent=true }
-
-
-  -- See `:help vim.lsp.*` for documentation on any of the below functions
-  buf_set_keymap('n', 'gD', '<Cmd>lua vim.lsp.buf.declaration()<CR>', opts)
-  buf_set_keymap('n', 'gd', '<Cmd>lua vim.lsp.buf.definition()<CR>', opts)
-  buf_set_keymap('n', 'K', '<Cmd>lua vim.lsp.buf.hover()<CR>', opts)
-  buf_set_keymap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', opts)
-  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
-  buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
-  buf_set_keymap('n', '<space>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
-  buf_set_keymap('n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-  buf_set_keymap('n', '<space>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
-  buf_set_keymap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
-  buf_set_keymap('n', '<space>e', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
-  buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
-  buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
-  buf_set_keymap('n', '<space>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
-  buf_set_keymap("n", "<space>f", "<cmd>lua vim.lsp.buf.formatting()<CR>", opts)
-
-end
-
--- Use a loop to conveniently call 'setup' on multiple servers and
--- map buffer local keybindings when the language server attaches
-EOF
 
 lua << EOF
 require('telescope').setup {
@@ -153,12 +112,11 @@ lua require'lspconfig'.bashls.setup{}
 lua require'lspconfig'.pyright.setup{}
 
 
-autocmd FileType yaml setlocal ts=4 sts=4 sw=4 expandtab
 
 " lua require'lspconfig'.pyright.setup{ on_attach=require'compe'.on_attach}
 " lua require'lspconfig'.pyright.setup{on_attach=require'completion'.on_attach}
-imap <tab> <Plug>(completion_smart_tab)
-imap <s-tab> <Plug>(completion_smart_s_tab)
+" imap <tab> <Plug>(completion_smart_tab)
+" imap <s-tab> <Plug>(completion_smart_s_tab)
 
 
 nnoremap <leader>h :wincmd h<CR>
@@ -170,10 +128,26 @@ nnoremap <leader>q :wincmd q<CR>
 nnoremap <F5> :UndotreeToggle<CR>
 nnoremap <silent> <F6> :let _s=@/ <Bar> :%s/\s\+$//e <Bar> :let @/=_s <Bar> :nohl <Bar> :unlet _s <CR>
 nnoremap <leader>gs :Git<CR>
+" imap <F5> <Esc>:w<CR>:!clear;python %<CR>
+
+
+
 
 " telescope
 nnoremap <leader>ff <cmd>lua require('telescope.builtin').find_files()<cr>
 nnoremap <leader>fg <cmd>lua require('telescope.builtin').live_grep()<cr>
 nnoremap <leader>fb <cmd>lua require('telescope.builtin').buffers()<cr>
 nnoremap <leader>fh <cmd>lua require('telescope.builtin').help_tags()<cr>
+
+
+" Autocommands
+autocmd FileType yaml setlocal ts=4 sts=4 sw=4 expandtab
+autocmd FileType python noremap <buffer> <F8> :call Autopep8()<CR>
+autocmd FileType python noremap <buffer> <F9> <Plug>(pydocstring)
+" autocmd FileType python setlocal tabstop=4 shiftwidth=4 smarttab expandtab
+
+
+
+let g:pydocstring_formatter = 'google'
+
 
