@@ -35,6 +35,7 @@ local options = {
 }
 
 vim.opt.shortmess:append "c"
+vim.g["doge_doc_standard_python"] = 'google'
 
 for k, v in pairs(options) do
   vim.opt[k] = v

@@ -83,6 +83,10 @@ return packer.startup(function(use)
   use "tpope/vim-commentary"
   use "tpope/vim-fugitive"
 
+  -- Python docstring
+  -- use "heavenshell/vim-pydocstring"
+  use "kkoomen/vim-doge"
+
 
   -- Automatically set up your configuration after cloning packer.nvim
   -- Put this at the end after all plugins
