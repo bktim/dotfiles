@@ -1,0 +1,8 @@
+alias ll='ls -lah'
+alias la='ls -A'
+alias l='ls -CF'
+alias gs='git status -sb'
+alias gl='git log --oneline --decorate --graph -20'
+alias v='nvim'
+alias vim='nvim'
+alias oc='opencode'

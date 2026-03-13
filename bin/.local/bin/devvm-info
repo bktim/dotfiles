@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'user: %s\n' "$(whoami)"
+printf 'host: %s\n' "$(hostname)"
+printf 'shell: %s\n' "${SHELL:-unknown}"
+printf 'term: %s\n' "${TERM:-unknown}"
+printf 'opencode: %s\n' "$(command -v opencode || printf 'not found')"

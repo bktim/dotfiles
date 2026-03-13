@@ -1,0 +1,21 @@
+local opt = vim.opt
+
+opt.clipboard = "unnamedplus"
+opt.conceallevel = 3
+opt.confirm = true
+opt.cursorline = true
+opt.expandtab = true
+opt.ignorecase = true
+opt.mouse = "a"
+opt.number = true
+opt.relativenumber = true
+opt.shiftwidth = 2
+opt.smartcase = true
+opt.smartindent = true
+opt.splitbelow = true
+opt.splitright = true
+opt.tabstop = 2
+opt.termguicolors = true
+opt.timeoutlen = 300
+opt.undofile = true
+opt.updatetime = 200
