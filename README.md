@@ -1,32 +1,125 @@
 # dotfiles
 
-Personal development environment
+Personal development environment managed with chezmoi.
 
-This repo uses GNU Stow to manage files in `$HOME`.
+## Layout
 
-## Structure
+This repository is the chezmoi source state, with a small `.chezmoiignore` for repo-only files such as `README.md` and `install`.
 
-- `shell/` - shell startup files
-- `git/` - Git configuration
-- `tmux/` - tmux configuration
-- `nvim/` - LazyVim-based Neovim configuration
-- `bin/` - small helper scripts in `~/.local/bin`
+- `dot_bashrc`, `dot_bash_aliases`, `dot_bash_profile`, `dot_profile` - shell startup files
+- `dot_gitconfig` - Git configuration
+- `dot_tmux.conf` - tmux configuration with portable clipboard support
+- `dot_config/nvim/` - LazyVim-based Neovim configuration
+- `dot_local/bin/` - small helper scripts in `~/.local/bin`
 
-## Install
+The repo keeps most files as plain source-state files and relies on templates only when rendered output truly needs to differ.
+
+## Bootstrap a machine
+
+If the repo is already cloned locally, the bootstrap script installs the required tools and then applies the dotfiles:
 
 ```bash
 ./install
 ```
 
-The installer uses `stow --restow`.
+The bootstrap currently supports Debian, Arch Linux, and macOS.
+
+- Debian: uses `apt-get`
+- Arch Linux: uses `pacman`
+- macOS: installs Homebrew first if needed, then uses `brew`
+
+Core tools installed automatically include:
+
+- `chezmoi`
+- `git`
+- `tmux`
+- `neovim`
+- `opencode`
+- `fzf`
+- `zoxide`
+- `fd` / `fdfind`
+- `ripgrep`
+- `bash-completion`
+- `curl`
+- clipboard helpers (`wl-clipboard`, `xclip`) on Linux
+
+`opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
+
+## Apply this repo
+
+If the repo is already cloned locally:
+
+```bash
+./install
+```
+
+That bootstrap flow installs missing dependencies, then runs:
+
+```bash
+chezmoi init --apply "$PWD"
+```
+
+This keeps your current clone as the active chezmoi source directory, so
+commands like `chezmoi edit ~/.bashrc` work against this repo directly.
+
+If you want to initialize directly with chezmoi from another machine, use your git remote with:
+
+```bash
+chezmoi init --apply <repo-url>
+```
+
+That path assumes `chezmoi` is already available. For a fresh machine, using the repo-local `./install` script is the fully automated option.
+
+If you want to work on the managed source tree directly later:
+
+```bash
+chezmoi cd
+```
+
+When you install from this clone, `chezmoi cd` should take you back to the same
+repository path.
+
+## Daily use
+
+```bash
+chezmoi diff
+chezmoi apply
+chezmoi edit ~/.bashrc
+chezmoi cd
+chezmoi status
+```
+
+## Machine-specific Git settings
+
+This repo manages a shared baseline `~/.gitconfig` and now includes an optional per-machine file:
+
+```gitconfig
+[include]
+    path = ~/.gitconfig.local
+```
+
+Use `~/.gitconfig.local` for sensitive or machine-specific values such as:
+
+- `user.email`
+- `user.name`
+- signing keys
+- work-only Git settings
+
+Example:
+
+```gitconfig
+[user]
+    name = Tim Example
+    email = tim@example.com
+```
+
+Leave `~/.gitconfig.local` absent on machines that do not need extra settings.
 
 ## Neovim
 
-The `nvim/` package uses the LazyVim starter structure.
+The Neovim config uses the LazyVim starter structure.
 
 On first launch, LazyVim bootstraps `lazy.nvim` and downloads plugins automatically.
-
-This repo expects the VM provisioning layer to install a modern Neovim release compatible with LazyVim.
 
 Useful commands:
 
@@ -35,9 +128,10 @@ nvim
 nvim --headless "+Lazy! sync" +qa
 ```
 
-## Add a new package
+The bootstrap script also attempts a headless Lazy sync after applying the dotfiles.
 
-1. Create a new top-level directory such as `zsh/` or `direnv/`.
-2. Put files inside it using their target home-relative paths.
-3. Add the package name to `packages=(...)` in `install`.
-4. Re-run `./install`.
+## Add a new dotfile
+
+1. Add the file to the repo using chezmoi naming conventions, for example `dot_zshrc` or `dot_config/alacritty/alacritty.toml`.
+2. Use `.tmpl` only when the rendered output must differ by OS, host, or user data.
+3. Run `chezmoi diff` and `chezmoi apply` to verify the change.

@@ -1,0 +1,20 @@
+path_prepend() {
+  case ":$PATH:" in
+    *":$1:"*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+}
+
+if [ -d "$HOME/.opencode/bin" ]; then
+  path_prepend "$HOME/.opencode/bin"
+fi
+
+if [ -d "$HOME/bin" ]; then
+  path_prepend "$HOME/bin"
+fi
+
+if [ -d "$HOME/.local/bin" ]; then
+  path_prepend "$HOME/.local/bin"
+fi
+
+export PATH

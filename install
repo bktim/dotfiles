@@ -2,41 +2,221 @@
 set -euo pipefail
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-target_dir=${TARGET:-"$HOME"}
-packages=(shell git tmux nvim bin)
 
-for cmd in stow; do
-  command -v "$cmd" >/dev/null 2>&1 || {
-    printf 'missing required command: %s\n' "$cmd" >&2
-    exit 1
-  }
-done
-
-if [[ $# -gt 0 ]]; then
-  packages=("$@")
-fi
-
-prepare_package() {
-  local package source_path rel_path target_path target_realpath
-
-  package=$1
-  while IFS= read -r source_path; do
-    rel_path=${source_path#"$repo_dir/$package/"}
-    target_path="$target_dir/$rel_path"
-
-    if target_realpath=$(readlink -f "$target_path" 2>/dev/null); then
-      case "$target_realpath" in
-        "$repo_dir"/*) continue ;;
-      esac
-    fi
-
-    if [[ -e "$target_path" && ! -L "$target_path" && ! -d "$target_path" ]]; then
-      mv "$target_path" "$target_path.pre-dotfiles"
-    fi
-  done < <(find "$repo_dir/$package" \( -type f -o -type l \))
+log() {
+  printf '==> %s\n' "$*"
 }
 
-for package in "${packages[@]}"; do
-  prepare_package "$package"
-  stow --dir "$repo_dir" --target "$target_dir" --restow "$package"
-done
+warn() {
+  printf 'warning: %s\n' "$*" >&2
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+opencode_bin() {
+  if need_cmd opencode; then
+    command -v opencode
+    return
+  fi
+
+  if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+    printf '%s\n' "$HOME/.opencode/bin/opencode"
+    return
+  fi
+
+  if [[ -x "$HOME/.local/bin/opencode" ]]; then
+    printf '%s\n' "$HOME/.local/bin/opencode"
+    return
+  fi
+
+  return 1
+}
+
+os_id() {
+  if [[ $(uname -s) == "Darwin" ]]; then
+    printf 'macos\n'
+    return
+  fi
+
+  if [[ -r /etc/os-release ]]; then
+    . /etc/os-release
+    case ${ID:-} in
+    debian | ubuntu)
+      printf 'debian\n'
+      return
+      ;;
+    arch)
+      printf 'arch\n'
+      return
+      ;;
+    esac
+  fi
+
+  printf 'unsupported\n'
+}
+
+require_sudo() {
+  if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
+    if ! need_cmd sudo; then
+      printf 'missing required command: sudo\n' >&2
+      exit 1
+    fi
+  fi
+}
+
+run_as_root() {
+  if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+install_homebrew() {
+  if need_cmd brew; then
+    return
+  fi
+
+  if ! need_cmd curl; then
+    printf 'missing required command: curl\n' >&2
+    exit 1
+  fi
+
+  log "Installing Homebrew"
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+}
+
+install_packages_debian() {
+  require_sudo
+  log "Installing packages with apt"
+  run_as_root apt-get update
+  run_as_root apt-get install -y \
+    curl \
+    bash-completion \
+    chezmoi \
+    fd-find \
+    fzf \
+    git \
+    neovim \
+    ripgrep \
+    tmux \
+    xclip \
+    wl-clipboard \
+    zoxide
+}
+
+install_packages_arch() {
+  require_sudo
+  log "Installing packages with pacman"
+  run_as_root pacman -Sy --needed --noconfirm \
+    bash-completion \
+    chezmoi \
+    curl \
+    fd \
+    fzf \
+    git \
+    neovim \
+    ripgrep \
+    tmux \
+    wl-clipboard \
+    xclip \
+    zoxide
+}
+
+install_packages_macos() {
+  install_homebrew
+  log "Installing packages with Homebrew"
+  brew install \
+    bash \
+    bash-completion@2 \
+    chezmoi \
+    fd \
+    fzf \
+    git \
+    neovim \
+    ripgrep \
+    tmux \
+    zoxide
+}
+
+install_packages() {
+  case $(os_id) in
+  debian)
+    install_packages_debian
+    ;;
+  arch)
+    install_packages_arch
+    ;;
+  macos)
+    install_packages_macos
+    ;;
+  *)
+    printf 'unsupported platform; expected Debian, Arch, or macOS\n' >&2
+    exit 1
+    ;;
+  esac
+}
+
+install_opencode() {
+  local opencode_path
+
+  if opencode_path=$(opencode_bin); then
+    log "OpenCode already installed at $opencode_path"
+    PATH="$(dirname "$opencode_path"):$PATH"
+    return
+  fi
+
+  if ! need_cmd curl; then
+    printf 'missing required command: curl\n' >&2
+    exit 1
+  fi
+
+  log "Installing OpenCode"
+  /bin/bash -c "$(curl -fsSL https://opencode.ai/install)"
+
+  if opencode_path=$(opencode_bin); then
+    PATH="$(dirname "$opencode_path"):$PATH"
+    return
+  fi
+
+  printf 'OpenCode installation completed but binary was not found in PATH, $HOME/.opencode/bin, or $HOME/.local/bin\n' >&2
+  exit 1
+}
+
+sync_neovim_plugins() {
+  if ! need_cmd nvim; then
+    warn "Skipping Neovim plugin sync because nvim is not installed"
+    return
+  fi
+
+  log "Syncing Neovim plugins"
+  if ! nvim --headless "+Lazy! sync" +qa; then
+    warn "Neovim plugin sync failed; run 'nvim --headless \"+Lazy! sync\" +qa' later"
+  fi
+}
+
+main() {
+  install_packages
+  install_opencode
+
+  if ! need_cmd chezmoi; then
+    printf 'missing required command after bootstrap: chezmoi\n' >&2
+    exit 1
+  fi
+
+  log "Applying dotfiles with chezmoi"
+  chezmoi init --apply "$repo_dir" "$@"
+  sync_neovim_plugins
+
+  log "Setup complete"
+}
+
+main "$@"

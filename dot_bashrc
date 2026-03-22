@@ -1,0 +1,56 @@
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
+
+export EDITOR=nvim
+export VISUAL=nvim
+export PAGER=less
+
+source_first() {
+  local file
+
+  for file in "$@"; do
+    if [[ -f "$file" ]]; then
+      . "$file"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+if [ -f "$HOME/.profile" ]; then
+  . "$HOME/.profile"
+fi
+
+if [[ -f "$HOME/.bash_aliases" ]]; then
+  . "$HOME/.bash_aliases"
+fi
+
+if command -v dircolors >/dev/null 2>&1; then
+  eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+fi
+
+
+source_first \
+  /usr/share/bash-completion/bash_completion \
+  /opt/homebrew/etc/profile.d/bash_completion.sh \
+  /usr/local/etc/profile.d/bash_completion.sh
+
+source_first \
+  /usr/share/doc/fzf/examples/key-bindings.bash \
+  /usr/share/fzf/key-bindings.bash \
+  /opt/homebrew/opt/fzf/shell/key-bindings.bash \
+  /usr/local/opt/fzf/shell/key-bindings.bash
+
+source_first \
+  /usr/share/doc/fzf/examples/completion.bash \
+  /usr/share/fzf/completion.bash \
+  /opt/homebrew/opt/fzf/shell/completion.bash \
+  /usr/local/opt/fzf/shell/completion.bash
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init bash --cmd cd)"
+fi
