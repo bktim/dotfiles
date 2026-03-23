@@ -54,3 +54,21 @@ source_first \
 if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init bash --cmd cd)"
 fi
+
+HISTSIZE=100000
+HISTFILESIZE=200000
+
+# Append instead of overwrite
+shopt -s histappend
+
+# Avoid duplicates and clean history
+HISTCONTROL=ignoredups:erasedups
+
+# Ignore trivial commands
+HISTIGNORE="ls::ll:cd:pwd:exit:clear"
+
+# Add timestamps
+HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S "
+
+# Save after every command (important for multiple terminals)
+PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
