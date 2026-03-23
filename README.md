@@ -58,6 +58,7 @@ Core tools installed automatically include:
 
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
 Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
+`stylua` is installed with `cargo` during bootstrap so it stays available even when a distro package is missing.
 
 ## Apply this repo
 

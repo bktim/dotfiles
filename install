@@ -146,7 +146,6 @@ install_packages_debian() {
     ripgrep \
     shellcheck \
     shfmt \
-    stylua \
     tmux \
     xclip \
     wl-clipboard \
@@ -312,6 +311,47 @@ install_rust_toolchain() {
   fi
 }
 
+stylua_bin() {
+  if need_cmd stylua; then
+    command -v stylua
+    return
+  fi
+
+  if [[ -x "$HOME/.cargo/bin/stylua" ]]; then
+    printf '%s\n' "$HOME/.cargo/bin/stylua"
+    return
+  fi
+
+  return 1
+}
+
+install_stylua() {
+  local stylua_path
+
+  if stylua_path=$(stylua_bin); then
+    log "Stylua already installed at $stylua_path"
+    PATH="$(dirname "$stylua_path"):$PATH"
+    return
+  fi
+
+  if ! need_cmd cargo; then
+    printf 'missing required command: cargo\n' >&2
+    exit 1
+  fi
+
+  log "Installing Stylua with cargo"
+  cargo install stylua --locked
+  append_path_if_dir "$HOME/.cargo/bin"
+
+  if stylua_path=$(stylua_bin); then
+    PATH="$(dirname "$stylua_path"):$PATH"
+    return
+  fi
+
+  printf 'Stylua installation completed but binary was not found in PATH or $HOME/.cargo/bin\n' >&2
+  exit 1
+}
+
 sync_neovim_plugins() {
   if ! need_cmd nvim; then
     warn "Skipping Neovim plugin sync because nvim is not installed"
@@ -424,6 +464,7 @@ main() {
   install_chezmoi
   install_opencode
   install_rust_toolchain
+  install_stylua
 
   if ! need_cmd chezmoi; then
     printf 'missing required command after bootstrap: chezmoi\n' >&2
