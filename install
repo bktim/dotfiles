@@ -4,6 +4,7 @@ set -euo pipefail
 repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 verify_only=false
 chezmoi_args=()
+minimum_nvim_version="0.11.2"
 
 log() {
   printf '==> %s\n' "$*"
@@ -106,6 +107,37 @@ append_path_if_dir() {
   fi
 }
 
+version_ge() {
+  local left=${1#v}
+  local right=${2#v}
+  local left_parts=()
+  local right_parts=()
+  local i
+
+  IFS=. read -r -a left_parts <<<"$left"
+  IFS=. read -r -a right_parts <<<"$right"
+
+  for ((i = ${#left_parts[@]}; i < ${#right_parts[@]}; i++)); do
+    left_parts[i]=0
+  done
+
+  for ((i = ${#right_parts[@]}; i < ${#left_parts[@]}; i++)); do
+    right_parts[i]=0
+  done
+
+  for ((i = 0; i < ${#left_parts[@]}; i++)); do
+    if ((10#${left_parts[i]} > 10#${right_parts[i]})); then
+      return 0
+    fi
+
+    if ((10#${left_parts[i]} < 10#${right_parts[i]})); then
+      return 1
+    fi
+  done
+
+  return 0
+}
+
 install_homebrew() {
   if need_cmd brew; then
     return
@@ -137,7 +169,6 @@ install_packages_debian() {
     fzf \
     git \
     golang-go \
-    neovim \
     nodejs \
     npm \
     python3 \
@@ -150,6 +181,138 @@ install_packages_debian() {
     xclip \
     wl-clipboard \
     zoxide
+}
+
+nvim_bin() {
+  if need_cmd nvim; then
+    command -v nvim
+    return
+  fi
+
+  if [[ -x "$HOME/.local/bin/nvim" ]]; then
+    printf '%s\n' "$HOME/.local/bin/nvim"
+    return
+  fi
+
+  if [[ -x "$HOME/.local/opt/nvim/bin/nvim" ]]; then
+    printf '%s\n' "$HOME/.local/opt/nvim/bin/nvim"
+    return
+  fi
+
+  return 1
+}
+
+nvim_version() {
+  local nvim_path
+  local version_line
+
+  if ! nvim_path=$(nvim_bin); then
+    return 1
+  fi
+
+  version_line=$("$nvim_path" --version 2>/dev/null || true)
+  version_line=${version_line%%$'\n'*}
+  version_line=${version_line#NVIM }
+  version_line=${version_line#v}
+
+  if [[ -z "$version_line" ]]; then
+    return 1
+  fi
+
+  printf '%s\n' "$version_line"
+}
+
+nvim_release_arch() {
+  case $(uname -m) in
+    x86_64)
+      printf 'x86_64\n'
+      ;;
+    aarch64 | arm64)
+      printf 'arm64\n'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+install_neovim_from_tarball() {
+  local platform=$1
+  local arch
+  local archive_name
+  local url
+  local tmp_dir
+  local extract_root
+  local install_root="$HOME/.local/opt/nvim"
+
+  if ! need_cmd curl; then
+    printf 'missing required command: curl\n' >&2
+    exit 1
+  fi
+
+  if ! need_cmd tar; then
+    printf 'missing required command: tar\n' >&2
+    exit 1
+  fi
+
+  if ! arch=$(nvim_release_arch); then
+    printf 'unsupported architecture for Neovim bootstrap: %s\n' "$(uname -m)" >&2
+    exit 1
+  fi
+
+  archive_name="nvim-${platform}-${arch}.tar.gz"
+  url="https://github.com/neovim/neovim/releases/download/stable/${archive_name}"
+  tmp_dir=$(mktemp -d)
+  extract_root="$tmp_dir/extract"
+  mkdir -p "$extract_root" "$HOME/.local/bin" "$HOME/.local/opt"
+
+  log "Installing Neovim $minimum_nvim_version or newer from official release"
+  trap 'rm -rf "$tmp_dir"' RETURN
+  curl -fL "$url" -o "$tmp_dir/$archive_name"
+  tar -xzf "$tmp_dir/$archive_name" -C "$extract_root"
+  rm -rf "$install_root"
+  mv "$extract_root"/nvim-* "$install_root"
+  ln -sfn "$install_root/bin/nvim" "$HOME/.local/bin/nvim"
+  append_path_if_dir "$HOME/.local/bin"
+  trap - RETURN
+  rm -rf "$tmp_dir"
+}
+
+install_neovim() {
+  local current_version
+
+  if current_version=$(nvim_version); then
+    if version_ge "$current_version" "$minimum_nvim_version"; then
+      log "Neovim already installed at $(nvim_bin) (v$current_version)"
+      PATH="$(dirname "$(nvim_bin)"):$PATH"
+      return
+    fi
+
+    warn "Neovim v$current_version is too old; upgrading to v$minimum_nvim_version or newer"
+  fi
+
+  case $(os_id) in
+    debian | arch)
+      install_neovim_from_tarball "linux"
+      ;;
+    macos)
+      install_neovim_from_tarball "macos"
+      ;;
+    *)
+      printf 'unsupported platform for Neovim bootstrap\n' >&2
+      exit 1
+      ;;
+  esac
+
+  if ! current_version=$(nvim_version); then
+    printf 'Neovim installation completed but version could not be detected\n' >&2
+    exit 1
+  fi
+
+  if ! version_ge "$current_version" "$minimum_nvim_version"; then
+    printf 'Neovim installation completed but version %s is still below required %s\n' "$current_version" "$minimum_nvim_version" >&2
+    exit 1
+  fi
 }
 
 chezmoi_bin() {
@@ -391,13 +554,23 @@ verify_cmd() {
 
 verify_tools() {
   local failures=0
+  local current_nvim_version
 
   log "Verifying installed tools"
 
   verify_cmd "chezmoi" chezmoi || failures=$((failures + 1))
   verify_cmd "git" git || failures=$((failures + 1))
   verify_cmd "tmux" tmux || failures=$((failures + 1))
-  verify_cmd "nvim" nvim || failures=$((failures + 1))
+  if verify_cmd "nvim" nvim; then
+    if current_nvim_version=$(nvim_version) && version_ge "$current_nvim_version" "$minimum_nvim_version"; then
+      printf '  [ok] nvim version >= %s (found %s)\n' "$minimum_nvim_version" "$current_nvim_version"
+    else
+      printf '  [missing] nvim version >= %s\n' "$minimum_nvim_version"
+      failures=$((failures + 1))
+    fi
+  else
+    failures=$((failures + 1))
+  fi
   verify_cmd "opencode" opencode || failures=$((failures + 1))
   verify_cmd "fzf" fzf || failures=$((failures + 1))
   verify_cmd "zoxide" zoxide || failures=$((failures + 1))
@@ -424,7 +597,7 @@ verify_tools() {
   esac
 
   if ((failures > 0)); then
-    printf 'tool verification failed: %s required command(s) missing\n' "$failures" >&2
+    printf 'tool verification failed: %s required command(s) missing or outdated\n' "$failures" >&2
     exit 1
   fi
 }
@@ -461,6 +634,7 @@ main() {
   fi
 
   install_packages
+  install_neovim
   install_chezmoi
   install_opencode
   install_rust_toolchain

@@ -59,6 +59,7 @@ Core tools installed automatically include:
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
 Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
 `stylua` is installed with `cargo` during bootstrap so it stays available even when a distro package is missing.
+Neovim is checked for a minimum supported version of `0.11.2`; if the system package is missing or too old, bootstrap installs the current official Neovim release into `~/.local`.
 
 ## Apply this repo
 
@@ -144,6 +145,7 @@ nvim --headless "+Lazy! sync" +qa
 ```
 
 The bootstrap script also attempts a headless Lazy sync after applying the dotfiles.
+It ensures Neovim is at least `0.11.2` first, because current LazyVim requires that baseline.
 It then runs:
 
 ```bash

@@ -13,12 +13,16 @@ if not vim.loop.fs_stat(lazypath) then
     lazypath,
   })
   if vim.v.shell_error ~= 0 then
-    vim.api.nvim_echo({
-      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-      { out, "WarningMsg" },
-      { "\nPress any key to exit..." },
-    }, true, {})
-    vim.fn.getchar()
+    if #vim.api.nvim_list_uis() == 0 then
+      io.stderr:write("Failed to clone lazy.nvim:\n" .. out .. "\n")
+    else
+      vim.api.nvim_echo({
+        { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+        { out, "WarningMsg" },
+        { "\nPress any key to exit..." },
+      }, true, {})
+      vim.fn.getchar()
+    end
     os.exit(1)
   end
 end
