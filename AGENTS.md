@@ -31,7 +31,9 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 
 ### Install / Apply
 - Initial bootstrap from this clone: `./install`
-- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, then runs `chezmoi init --apply "$PWD"`
+- Verification-only audit: `./install --verify-only`
+- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, installs a Rust toolchain with `rustup`, runs `chezmoi init --apply "$PWD"`, then performs verification checks and fails if required tools are still missing
+- `./install --verify-only` skips package installation and chezmoi apply, and only runs verification checks
 - Re-apply changes: `chezmoi apply`
 - Preview rendered changes: `chezmoi diff`
 - Show source/render drift: `chezmoi status`
@@ -40,8 +42,10 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 ### Build
 - There is no formal build system.
 - Full bootstrap/setup: `./install`
+- Read-only environment audit: `./install --verify-only`
 - Neovim/plugin bootstrap validation: `nvim --headless "+Lazy! sync" +qa`
 - Basic Neovim config smoke test: `nvim --headless +qa`
+- Neovim health validation: `nvim --headless "+checkhealth" +qa`
 
 ### Lint / Static Checks
 - There is no dedicated repo-wide lint task.
@@ -83,6 +87,7 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
   - optionally reload a live session with `tmux source-file ~/.tmux.conf`
 - bootstrap/install changed:
   - `bash -n install`
+  - `nvim --headless "+checkhealth" +qa`
   - run `./install` on a supported platform when you need end-to-end validation
 - Git config changed:
   - keep changes minimal
@@ -130,7 +135,7 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 ## Imports, Dependencies, and Shapes
 - In Lua, use `require("module")`; avoid custom loader patterns unless needed.
 - In Bash, avoid unnecessary external dependencies.
-- Prefer tools already assumed by the repo or README: `chezmoi`, `nvim`, `git`, `opencode`, `fzf`, `zoxide`, clipboard helpers.
+- Prefer tools already assumed by the repo or README: `chezmoi`, `nvim`, `git`, `opencode`, `node`/`npm`, `python3`, `go`, `cargo`, `fzf`, `zoxide`, clipboard helpers.
 - Guard dependency-sensitive behavior so startup still works when a tool is missing.
 - No typed language or typechecker is configured here.
 - For Lua plugin specs, keep table shapes compatible with LazyVim/lazy.nvim conventions.

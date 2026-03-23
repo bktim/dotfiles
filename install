@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+verify_only=false
+chezmoi_args=()
 
 log() {
   printf '==> %s\n' "$*"
@@ -11,8 +13,30 @@ warn() {
   printf 'warning: %s\n' "$*" >&2
 }
 
+usage() {
+  cat <<'EOF'
+Usage: ./install [--verify-only] [chezmoi init args...]
+
+Options:
+  --verify-only  Skip installation and chezmoi apply; only run verification checks
+  -h, --help     Show this help message
+EOF
+}
+
 need_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+has_any_cmd() {
+  local cmd
+
+  for cmd in "$@"; do
+    if need_cmd "$cmd"; then
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 opencode_bin() {
@@ -74,6 +98,14 @@ run_as_root() {
   fi
 }
 
+append_path_if_dir() {
+  local dir=$1
+
+  if [[ -d "$dir" && ":$PATH:" != *":$dir:"* ]]; then
+    PATH="$dir:$PATH"
+  fi
+}
+
 install_homebrew() {
   if need_cmd brew; then
     return
@@ -99,18 +131,72 @@ install_packages_debian() {
   log "Installing packages with apt"
   run_as_root apt-get update
   run_as_root apt-get install -y \
-    curl \
     bash-completion \
-    chezmoi \
+    curl \
     fd-find \
     fzf \
     git \
+    golang-go \
     neovim \
+    nodejs \
+    npm \
+    python3 \
+    python3-pip \
+    python3-venv \
     ripgrep \
+    shellcheck \
+    shfmt \
+    stylua \
     tmux \
     xclip \
     wl-clipboard \
     zoxide
+}
+
+chezmoi_bin() {
+  if need_cmd chezmoi; then
+    command -v chezmoi
+    return
+  fi
+
+  if [[ -x "$HOME/.local/bin/chezmoi" ]]; then
+    printf '%s\n' "$HOME/.local/bin/chezmoi"
+    return
+  fi
+
+  if [[ -x "$HOME/bin/chezmoi" ]]; then
+    printf '%s\n' "$HOME/bin/chezmoi"
+    return
+  fi
+
+  return 1
+}
+
+install_chezmoi() {
+  local chezmoi_path
+
+  if chezmoi_path=$(chezmoi_bin); then
+    log "chezmoi already installed at $chezmoi_path"
+    PATH="$(dirname "$chezmoi_path"):$PATH"
+    return
+  fi
+
+  if ! need_cmd curl; then
+    printf 'missing required command: curl\n' >&2
+    exit 1
+  fi
+
+  log "Installing chezmoi"
+  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+  append_path_if_dir "$HOME/.local/bin"
+
+  if chezmoi_path=$(chezmoi_bin); then
+    PATH="$(dirname "$chezmoi_path"):$PATH"
+    return
+  fi
+
+  printf 'chezmoi installation completed but binary was not found in PATH, $HOME/.local/bin, or $HOME/bin\n' >&2
+  exit 1
 }
 
 install_packages_arch() {
@@ -123,8 +209,16 @@ install_packages_arch() {
     fd \
     fzf \
     git \
+    go \
     neovim \
+    nodejs \
+    npm \
+    python \
+    python-pip \
     ripgrep \
+    shellcheck \
+    shfmt \
+    stylua \
     tmux \
     wl-clipboard \
     xclip \
@@ -141,8 +235,14 @@ install_packages_macos() {
     fd \
     fzf \
     git \
+    go \
     neovim \
+    node \
+    python \
     ripgrep \
+    shellcheck \
+    shfmt \
+    stylua \
     tmux \
     zoxide
 }
@@ -191,6 +291,27 @@ install_opencode() {
   exit 1
 }
 
+install_rust_toolchain() {
+  if need_cmd rustc && need_cmd cargo; then
+    log "Rust toolchain already installed"
+    return
+  fi
+
+  if ! need_cmd curl; then
+    printf 'missing required command: curl\n' >&2
+    exit 1
+  fi
+
+  log "Installing Rust toolchain with rustup"
+  curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y
+  append_path_if_dir "$HOME/.cargo/bin"
+
+  if ! need_cmd rustc || ! need_cmd cargo; then
+    printf 'Rust installation completed but rustc/cargo were not found\n' >&2
+    exit 1
+  fi
+}
+
 sync_neovim_plugins() {
   if ! need_cmd nvim; then
     warn "Skipping Neovim plugin sync because nvim is not installed"
@@ -203,9 +324,106 @@ sync_neovim_plugins() {
   fi
 }
 
+check_neovim_health() {
+  if ! need_cmd nvim; then
+    warn "Skipping Neovim health check because nvim is not installed"
+    return
+  fi
+
+  log "Running Neovim checkhealth"
+  if ! nvim --headless "+checkhealth" +qa; then
+    warn "Neovim health check reported issues; run 'nvim --headless \"+checkhealth\" +qa' later"
+  fi
+}
+
+verify_cmd() {
+  local label=$1
+  shift
+
+  if has_any_cmd "$@"; then
+    printf '  [ok] %s\n' "$label"
+    return 0
+  fi
+
+  printf '  [missing] %s\n' "$label"
+  return 1
+}
+
+verify_tools() {
+  local failures=0
+
+  log "Verifying installed tools"
+
+  verify_cmd "chezmoi" chezmoi || failures=$((failures + 1))
+  verify_cmd "git" git || failures=$((failures + 1))
+  verify_cmd "tmux" tmux || failures=$((failures + 1))
+  verify_cmd "nvim" nvim || failures=$((failures + 1))
+  verify_cmd "opencode" opencode || failures=$((failures + 1))
+  verify_cmd "fzf" fzf || failures=$((failures + 1))
+  verify_cmd "zoxide" zoxide || failures=$((failures + 1))
+  verify_cmd "fd / fdfind" fd fdfind || failures=$((failures + 1))
+  verify_cmd "rg" rg || failures=$((failures + 1))
+  verify_cmd "node" node || failures=$((failures + 1))
+  verify_cmd "npm" npm || failures=$((failures + 1))
+  verify_cmd "python3 / python" python3 python || failures=$((failures + 1))
+  verify_cmd "pip3 / pip" pip3 pip || failures=$((failures + 1))
+  verify_cmd "go" go || failures=$((failures + 1))
+  verify_cmd "rustc" rustc || failures=$((failures + 1))
+  verify_cmd "cargo" cargo || failures=$((failures + 1))
+  verify_cmd "shellcheck" shellcheck || failures=$((failures + 1))
+  verify_cmd "shfmt" shfmt || failures=$((failures + 1))
+  verify_cmd "stylua" stylua || failures=$((failures + 1))
+
+  case $(os_id) in
+    macos)
+      verify_cmd "pbcopy" pbcopy || true
+      ;;
+    *)
+      verify_cmd "wl-copy / xclip" wl-copy xclip || true
+      ;;
+  esac
+
+  if ((failures > 0)); then
+    printf 'tool verification failed: %s required command(s) missing\n' "$failures" >&2
+    exit 1
+  fi
+}
+
+parse_args() {
+  while (($# > 0)); do
+    case $1 in
+      --verify-only)
+        verify_only=true
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        chezmoi_args+=("$1")
+        ;;
+    esac
+    shift
+  done
+}
+
 main() {
+  parse_args "$@"
+
+  if [[ $verify_only == true ]]; then
+    append_path_if_dir "$HOME/.cargo/bin"
+    append_path_if_dir "$HOME/.opencode/bin"
+    append_path_if_dir "$HOME/.local/bin"
+    check_neovim_health
+    verify_tools
+    log "Verification complete"
+    return
+  fi
+
   install_packages
+  install_chezmoi
   install_opencode
+  install_rust_toolchain
 
   if ! need_cmd chezmoi; then
     printf 'missing required command after bootstrap: chezmoi\n' >&2
@@ -213,8 +431,10 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  chezmoi init --apply "$repo_dir" "$@"
+  chezmoi init --apply "$repo_dir" "${chezmoi_args[@]}"
   sync_neovim_plugins
+  check_neovim_health
+  verify_tools
 
   log "Setup complete"
 }

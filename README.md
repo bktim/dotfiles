@@ -22,6 +22,12 @@ If the repo is already cloned locally, the bootstrap script installs the require
 ./install
 ```
 
+If you only want to audit the machine without changing it:
+
+```bash
+./install --verify-only
+```
+
 The bootstrap currently supports Debian, Arch Linux, and macOS.
 
 - Debian: uses `apt-get`
@@ -35,15 +41,23 @@ Core tools installed automatically include:
 - `tmux`
 - `neovim`
 - `opencode`
+- `node` / `npm`
+- `python3` / `pip3`
+- `go`
+- `rustc` / `cargo` via `rustup`
 - `fzf`
 - `zoxide`
 - `fd` / `fdfind`
 - `ripgrep`
+- `shellcheck`
+- `shfmt`
+- `stylua`
 - `bash-completion`
 - `curl`
 - clipboard helpers (`wl-clipboard`, `xclip`) on Linux
 
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
+Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
 
 ## Apply this repo
 
@@ -129,6 +143,14 @@ nvim --headless "+Lazy! sync" +qa
 ```
 
 The bootstrap script also attempts a headless Lazy sync after applying the dotfiles.
+It then runs:
+
+```bash
+nvim --headless "+checkhealth" +qa
+```
+
+and prints a small verification summary for the core CLI tools it expects to be available. If a required tool is still missing after bootstrap, `./install` exits non-zero.
+The `--verify-only` mode runs the same verification checks without installing packages or applying dotfiles.
 
 ## Add a new dotfile
 
