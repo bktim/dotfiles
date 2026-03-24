@@ -62,7 +62,6 @@ install_packages_arch() {
     ripgrep \
     shellcheck \
     shfmt \
-    stylua \
     tmux \
     wl-clipboard \
     xclip \
@@ -86,7 +85,6 @@ install_packages_macos() {
     ripgrep \
     shellcheck \
     shfmt \
-    stylua \
     tmux \
     zoxide
 }

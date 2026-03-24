@@ -68,7 +68,6 @@ verify_tools() {
   verify_cmd "cargo" cargo || failures=$((failures + 1))
   verify_cmd "shellcheck" shellcheck || failures=$((failures + 1))
   verify_cmd "shfmt" shfmt || failures=$((failures + 1))
-  verify_cmd "stylua" stylua || failures=$((failures + 1))
 
   case $(os_id) in
     macos)

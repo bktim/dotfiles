@@ -53,14 +53,12 @@ Core tools installed automatically include:
 - `ripgrep`
 - `shellcheck`
 - `shfmt`
-- `stylua`
 - `bash-completion`
 - `curl`
 - clipboard helpers (`wl-clipboard`, `xclip`) on Linux
 
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
 Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
-`stylua` is installed with `cargo` during bootstrap so it stays available even when a distro package is missing.
 Neovim is checked for a minimum supported version of `0.11.2`; if the system package is missing or too old, bootstrap installs the current official Neovim release into `~/.local`.
 
 ## Apply this repo

@@ -58,7 +58,6 @@ main() {
   install_chezmoi
   install_opencode
   install_rust_toolchain
-  install_stylua
 
   if ! need_cmd chezmoi; then
     printf 'missing required command after bootstrap: chezmoi\n' >&2
