@@ -22,6 +22,8 @@ If the repo is already cloned locally, the bootstrap script installs the require
 ./install
 ```
 
+That same entrypoint is safe to call from VM or host provisioning when you want the dotfiles repo to remain the source of truth.
+
 If you only want to audit the machine without changing it:
 
 ```bash

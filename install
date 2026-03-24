@@ -626,6 +626,7 @@ main() {
   if [[ $verify_only == true ]]; then
     append_path_if_dir "$HOME/.cargo/bin"
     append_path_if_dir "$HOME/.opencode/bin"
+    append_path_if_dir "$HOME/bin"
     append_path_if_dir "$HOME/.local/bin"
     check_neovim_health
     verify_tools

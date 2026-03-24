@@ -1,6 +1,6 @@
 case $- in
-  *i*) ;;
-  *) return ;;
+*i*) ;;
+*) return ;;
 esac
 
 export EDITOR=nvim
@@ -32,7 +32,6 @@ if command -v dircolors >/dev/null 2>&1; then
   eval "$(dircolors -b)"
   alias ls='ls --color=auto'
 fi
-
 
 source_first \
   /usr/share/bash-completion/bash_completion \
