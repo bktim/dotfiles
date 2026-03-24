@@ -5,4 +5,11 @@ if command -v fdfind >/dev/null 2>&1; then
   exec fdfind "$@"
 fi
 
-exec fd "$@"
+for fd_bin in /usr/bin/fd /bin/fd /opt/homebrew/bin/fd /usr/local/bin/fd; do
+  if [[ -x "$fd_bin" ]]; then
+    exec "$fd_bin" "$@"
+  fi
+done
+
+printf 'missing fd/fdfind binary\n' >&2
+exit 1
