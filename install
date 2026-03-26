@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+case ${BASH_SOURCE[0]} in
+  */*) repo_dir=${BASH_SOURCE[0]%/*} ;;
+  *) repo_dir=. ;;
+esac
+repo_dir=$(CDPATH= cd -- "$repo_dir" && pwd)
 verify_only=false
 chezmoi_args=()
 minimum_nvim_version="0.11.2"
@@ -12,13 +16,12 @@ source "$repo_dir/lib/install/tools.sh"
 source "$repo_dir/lib/install/verify.sh"
 
 usage() {
-  cat <<'EOF'
-Usage: ./install [--verify-only] [chezmoi init args...]
-
-Options:
-  --verify-only  Skip installation and chezmoi apply; only run verification checks
-  -h, --help     Show this help message
-EOF
+  printf '%s\n' \
+    'Usage: ./install [--verify-only] [chezmoi init args...]' \
+    '' \
+    'Options:' \
+    '  --verify-only  Skip installation and chezmoi apply; only run verification checks' \
+    '  -h, --help     Show this help message'
 }
 
 parse_args() {
@@ -87,7 +90,11 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  chezmoi init --apply "$repo_dir" "${chezmoi_args[@]}"
+  local cmd=(chezmoi init --apply "$repo_dir")
+  if ((${#chezmoi_args[@]} > 0)); then
+    cmd+=("${chezmoi_args[@]}")
+  fi
+  "${cmd[@]}"
   sync_neovim_plugins
   check_neovim_health
   verify_tools

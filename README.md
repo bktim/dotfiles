@@ -159,6 +159,6 @@ The `--verify-only` mode runs the same verification checks without installing pa
 
 ## Add a new dotfile
 
-1. Add the file to the repo using chezmoi naming conventions, for example `dot_zshrc` or `dot_config/alacritty/alacritty.toml`.
+1. Add the file to the repo using chezmoi naming conventions, for example `dot_bashrc` or `dot_config/alacritty/alacritty.toml`.
 2. Use `.tmpl` only when the rendered output must differ by OS, host, or user data.
 3. Run `chezmoi diff` and `chezmoi apply` to verify the change.
