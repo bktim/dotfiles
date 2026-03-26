@@ -38,12 +38,26 @@ verify_cmd() {
 verify_tools() {
   local failures=0
   local current_nvim_version
+  local nvm_version
 
   log "Verifying installed tools"
 
   verify_cmd "chezmoi" chezmoi || failures=$((failures + 1))
   verify_cmd "git" git || failures=$((failures + 1))
   verify_cmd "tmux" tmux || failures=$((failures + 1))
+  if load_nvm; then
+    if verify_cmd "nvm" nvm; then
+      nvm_version=$(nvm --version 2>/dev/null || true)
+      if [[ -n "$nvm_version" ]]; then
+        printf '  [ok] nvm version %s\n' "$nvm_version"
+      fi
+    else
+      failures=$((failures + 1))
+    fi
+  else
+    printf '  [missing] nvm\n'
+    failures=$((failures + 1))
+  fi
   if verify_cmd "nvim" nvim; then
     if current_nvim_version=$(nvim_version) && version_ge "$current_nvim_version" "$minimum_nvim_version"; then
       printf '  [ok] nvim version >= %s (found %s)\n' "$minimum_nvim_version" "$current_nvim_version"

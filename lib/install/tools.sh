@@ -17,6 +17,34 @@ opencode_bin() {
   return 1
 }
 
+nvm_sh_path() {
+  local candidate
+
+  for candidate in \
+    "${NVM_DIR:-$HOME/.nvm}/nvm.sh" \
+    /opt/homebrew/opt/nvm/nvm.sh \
+    /usr/local/opt/nvm/nvm.sh \
+    /usr/share/nvm/nvm.sh
+  do
+    if [[ -s "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+load_nvm() {
+  local nvm_sh
+
+  if ! nvm_sh=$(nvm_sh_path); then
+    return 1
+  fi
+
+  . "$nvm_sh"
+}
+
 nvim_bin() {
   if need_cmd nvim; then
     command -v nvim
@@ -219,6 +247,37 @@ install_opencode() {
 
   printf 'OpenCode installation completed but binary was not found in PATH, $HOME/.opencode/bin, or $HOME/.local/bin\n' >&2
   exit 1
+}
+
+install_nvm() {
+  local nvm_sh
+  local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+  local nvm_version
+
+  if nvm_sh=$(nvm_sh_path); then
+    # shellcheck disable=SC1090
+    . "$nvm_sh"
+    if nvm_version=$(nvm --version 2>/dev/null); then
+      log "nvm already installed at $(dirname "$nvm_sh") (v$nvm_version)"
+      return
+    fi
+  fi
+
+  if ! need_cmd git; then
+    printf 'missing required command: git\n' >&2
+    exit 1
+  fi
+
+  log "Installing nvm"
+  rm -rf "$nvm_dir"
+  git clone --depth 1 https://github.com/nvm-sh/nvm.git "$nvm_dir"
+
+  if ! load_nvm || ! nvm_version=$(nvm --version 2>/dev/null); then
+    printf 'nvm installation completed but version could not be detected\n' >&2
+    exit 1
+  fi
+
+  log "Installed nvm v$nvm_version"
 }
 
 install_rust_toolchain() {

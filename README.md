@@ -43,6 +43,7 @@ Core tools installed automatically include:
 - `tmux`
 - `neovim`
 - `opencode`
+- `nvm`
 - `node` / `npm`
 - `python3` / `pip3`
 - `go`
@@ -58,6 +59,7 @@ Core tools installed automatically include:
 - clipboard helpers (`wl-clipboard`, `xclip`) on Linux
 
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
+`nvm` is cloned into `~/.nvm` and sourced by Bash startup files so interactive shells can use it immediately.
 Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
 Neovim is checked for a minimum supported version of `0.11.2`; if the system package is missing or too old, bootstrap installs the current official Neovim release into `~/.local`.
 

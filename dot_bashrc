@@ -50,6 +50,18 @@ source_first \
   /opt/homebrew/opt/fzf/shell/completion.bash \
   /usr/local/opt/fzf/shell/completion.bash
 
+source_first \
+  "$NVM_DIR/nvm.sh" \
+  /opt/homebrew/opt/nvm/nvm.sh \
+  /usr/local/opt/nvm/nvm.sh \
+  /usr/share/nvm/nvm.sh
+
+source_first \
+  "$NVM_DIR/bash_completion" \
+  /opt/homebrew/opt/nvm/etc/bash_completion.d/nvm \
+  /usr/local/opt/nvm/etc/bash_completion.d/nvm \
+  /usr/share/nvm/bash_completion
+
 if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init bash --cmd cd)"
 fi

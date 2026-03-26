@@ -5,8 +5,22 @@ path_prepend() {
   esac
 }
 
+if [ -z "${PATH:-}" ]; then
+  PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+fi
+
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 if [ -d "$HOME/.opencode/bin" ]; then
   path_prepend "$HOME/.opencode/bin"
+fi
+
+if [ -d "$HOME/.cargo/bin" ]; then
+  path_prepend "$HOME/.cargo/bin"
 fi
 
 if [ -d "$HOME/bin" ]; then
@@ -16,5 +30,7 @@ fi
 if [ -d "$HOME/.local/bin" ]; then
   path_prepend "$HOME/.local/bin"
 fi
+
+export NVM_DIR="$HOME/.nvm"
 
 export PATH

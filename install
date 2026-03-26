@@ -57,6 +57,7 @@ main() {
   install_neovim
   install_chezmoi
   install_opencode
+  install_nvm
   install_rust_toolchain
 
   if ! need_cmd chezmoi; then
