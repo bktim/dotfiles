@@ -7,6 +7,9 @@ export EDITOR=nvim
 export VISUAL=nvim
 export PAGER=less
 
+: "${NVM_DIR:=$HOME/.nvm}"
+export NVM_DIR
+
 source_first() {
   local file
 
@@ -20,7 +23,7 @@ source_first() {
   return 1
 }
 
-if [ -f "$HOME/.profile" ]; then
+if [[ -z "${_DOT_PROFILE_LOADED:-}" && -f "$HOME/.profile" ]]; then
   . "$HOME/.profile"
 fi
 
@@ -30,7 +33,11 @@ fi
 
 if command -v dircolors >/dev/null 2>&1; then
   eval "$(dircolors -b)"
+fi
+if ls --color=auto /dev/null >/dev/null 2>&1; then
   alias ls='ls --color=auto'
+elif ls -G /dev/null >/dev/null 2>&1; then
+  alias ls='ls -G'
 fi
 
 source_first \
@@ -69,17 +76,21 @@ fi
 HISTSIZE=100000
 HISTFILESIZE=200000
 
-# Append instead of overwrite
 shopt -s histappend
 
-# Avoid duplicates and clean history
-HISTCONTROL=ignoredups:erasedups
+if ((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))); then
+  HISTCONTROL=ignoredups:erasedups
+else
+  HISTCONTROL=ignoredups
+fi
 
-# Ignore trivial commands
 HISTIGNORE="ls::ll:cd:pwd:exit:clear"
 
-# Add timestamps
 HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S "
 
-# Save after every command (important for multiple terminals)
-PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+_dotfiles_history_sync="history -a; history -c; history -r"
+case ";${PROMPT_COMMAND:-};" in
+  *";${_dotfiles_history_sync};"*) ;;
+  *) PROMPT_COMMAND="${_dotfiles_history_sync}${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+esac
+unset _dotfiles_history_sync

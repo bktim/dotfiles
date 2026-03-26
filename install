@@ -47,12 +47,12 @@ bootstrap_path() {
     PATH="/usr/bin:/bin:/usr/sbin:/sbin"
   fi
 
-  append_path_if_dir /opt/homebrew/bin
-  append_path_if_dir /usr/local/bin
-  append_path_if_dir /usr/bin
-  append_path_if_dir /bin
-  append_path_if_dir /usr/sbin
-  append_path_if_dir /sbin
+  prepend_path_if_dir /opt/homebrew/bin
+  prepend_path_if_dir /usr/local/bin
+  prepend_path_if_dir /usr/bin
+  prepend_path_if_dir /bin
+  prepend_path_if_dir /usr/sbin
+  prepend_path_if_dir /sbin
   export PATH
 }
 
@@ -67,10 +67,10 @@ main() {
   fi
 
   if [[ $verify_only == true ]]; then
-    append_path_if_dir "$HOME/.cargo/bin"
-    append_path_if_dir "$HOME/.opencode/bin"
-    append_path_if_dir "$HOME/bin"
-    append_path_if_dir "$HOME/.local/bin"
+    prepend_path_if_dir "$HOME/.cargo/bin"
+    prepend_path_if_dir "$HOME/.opencode/bin"
+    prepend_path_if_dir "$HOME/bin"
+    prepend_path_if_dir "$HOME/.local/bin"
     check_neovim_health
     verify_tools
     log "Verification complete"
@@ -78,6 +78,7 @@ main() {
   fi
 
   install_packages
+  set_login_shell_bash
   install_neovim
   install_chezmoi
   install_opencode

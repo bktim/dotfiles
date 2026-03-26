@@ -1,302 +1,360 @@
 opencode_bin() {
-  if need_cmd opencode; then
-    command -v opencode
-    return
-  fi
+	if need_cmd opencode; then
+		command -v opencode
+		return
+	fi
 
-  if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
-    printf '%s\n' "$HOME/.opencode/bin/opencode"
-    return
-  fi
+	if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+		printf '%s\n' "$HOME/.opencode/bin/opencode"
+		return
+	fi
 
-  if [[ -x "$HOME/.local/bin/opencode" ]]; then
-    printf '%s\n' "$HOME/.local/bin/opencode"
-    return
-  fi
+	if [[ -x "$HOME/.local/bin/opencode" ]]; then
+		printf '%s\n' "$HOME/.local/bin/opencode"
+		return
+	fi
 
-  return 1
+	return 1
 }
 
 nvm_sh_path() {
-  local candidate
+	local candidate
 
-  for candidate in \
-    "${NVM_DIR:-$HOME/.nvm}/nvm.sh" \
-    /opt/homebrew/opt/nvm/nvm.sh \
-    /usr/local/opt/nvm/nvm.sh \
-    /usr/share/nvm/nvm.sh
-  do
-    if [[ -s "$candidate" ]]; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
+	for candidate in \
+		"${NVM_DIR:-$HOME/.nvm}/nvm.sh" \
+		/opt/homebrew/opt/nvm/nvm.sh \
+		/usr/local/opt/nvm/nvm.sh \
+		/usr/share/nvm/nvm.sh; do
+		if [[ -s "$candidate" ]]; then
+			printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
 
-  return 1
+	return 1
 }
 
 load_nvm() {
-  local nvm_sh
+	local nvm_sh
 
-  if ! nvm_sh=$(nvm_sh_path); then
-    return 1
-  fi
+	if ! nvm_sh=$(nvm_sh_path); then
+		return 1
+	fi
 
-  . "$nvm_sh"
+	. "$nvm_sh"
 }
 
 nvim_bin() {
-  if need_cmd nvim; then
-    command -v nvim
-    return
-  fi
+	if need_cmd nvim; then
+		command -v nvim
+		return
+	fi
 
-  if [[ -x "$HOME/.local/bin/nvim" ]]; then
-    printf '%s\n' "$HOME/.local/bin/nvim"
-    return
-  fi
+	if [[ -x "$HOME/.local/bin/nvim" ]]; then
+		printf '%s\n' "$HOME/.local/bin/nvim"
+		return
+	fi
 
-  if [[ -x "$HOME/.local/opt/nvim/bin/nvim" ]]; then
-    printf '%s\n' "$HOME/.local/opt/nvim/bin/nvim"
-    return
-  fi
+	if [[ -x "$HOME/.local/opt/nvim/bin/nvim" ]]; then
+		printf '%s\n' "$HOME/.local/opt/nvim/bin/nvim"
+		return
+	fi
 
-  return 1
+	return 1
 }
 
 nvim_version() {
-  local nvim_path
-  local version_line
+	local nvim_path
+	local version_line
 
-  if ! nvim_path=$(nvim_bin); then
-    return 1
-  fi
+	if ! nvim_path=$(nvim_bin); then
+		return 1
+	fi
 
-  version_line=$("$nvim_path" --version 2>/dev/null || true)
-  version_line=${version_line%%$'\n'*}
-  version_line=${version_line#NVIM }
-  version_line=${version_line#v}
+	version_line=$("$nvim_path" --version 2>/dev/null || true)
+	version_line=${version_line%%$'\n'*}
+	version_line=${version_line#NVIM }
+	version_line=${version_line#v}
 
-  if [[ -z "$version_line" ]]; then
-    return 1
-  fi
+	if [[ -z "$version_line" ]]; then
+		return 1
+	fi
 
-  printf '%s\n' "$version_line"
+	printf '%s\n' "$version_line"
 }
 
 nvim_release_arch() {
-  case $(uname -m) in
-    x86_64)
-      printf 'x86_64\n'
-      ;;
-    aarch64 | arm64)
-      printf 'arm64\n'
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+	case $(uname -m) in
+	x86_64)
+		printf 'x86_64\n'
+		;;
+	aarch64 | arm64)
+		printf 'arm64\n'
+		;;
+	*)
+		return 1
+		;;
+	esac
 }
 
 install_neovim_from_tarball() {
-  local platform=$1
-  local arch
-  local archive_name
-  local url
-  local tmp_dir
-  local extract_root
-  local install_root="$HOME/.local/opt/nvim"
+	local platform=$1
+	local arch
+	local archive_name
+	local url
+	local tmp_dir
+	local extract_root
+	local install_root="$HOME/.local/opt/nvim"
 
-  if ! need_cmd curl; then
-    printf 'missing required command: curl\n' >&2
-    exit 1
-  fi
+	if ! need_cmd curl; then
+		printf 'missing required command: curl\n' >&2
+		exit 1
+	fi
 
-  if ! need_cmd tar; then
-    printf 'missing required command: tar\n' >&2
-    exit 1
-  fi
+	if ! need_cmd tar; then
+		printf 'missing required command: tar\n' >&2
+		exit 1
+	fi
 
-  if ! arch=$(nvim_release_arch); then
-    printf 'unsupported architecture for Neovim bootstrap: %s\n' "$(uname -m)" >&2
-    exit 1
-  fi
+	if ! arch=$(nvim_release_arch); then
+		printf 'unsupported architecture for Neovim bootstrap: %s\n' "$(uname -m)" >&2
+		exit 1
+	fi
 
-  archive_name="nvim-${platform}-${arch}.tar.gz"
-  url="https://github.com/neovim/neovim/releases/download/stable/${archive_name}"
-  tmp_dir=$(mktemp -d)
-  extract_root="$tmp_dir/extract"
-  mkdir -p "$extract_root" "$HOME/.local/bin" "$HOME/.local/opt"
+	archive_name="nvim-${platform}-${arch}.tar.gz"
+	url="https://github.com/neovim/neovim/releases/download/stable/${archive_name}"
+	tmp_dir=$(mktemp -d)
+	extract_root="$tmp_dir/extract"
+	mkdir -p "$extract_root" "$HOME/.local/bin" "$HOME/.local/opt"
 
-  log "Installing Neovim $minimum_nvim_version or newer from official release"
-  trap 'rm -rf "$tmp_dir"' RETURN
-  curl -fL "$url" -o "$tmp_dir/$archive_name"
-  tar -xzf "$tmp_dir/$archive_name" -C "$extract_root"
-  rm -rf "$install_root"
-  mv "$extract_root"/nvim-* "$install_root"
-  ln -sfn "$install_root/bin/nvim" "$HOME/.local/bin/nvim"
-  append_path_if_dir "$HOME/.local/bin"
-  trap - RETURN
-  rm -rf "$tmp_dir"
+	log "Installing Neovim $minimum_nvim_version or newer from official release"
+	trap 'rm -rf "$tmp_dir"' RETURN
+	curl -fL "$url" -o "$tmp_dir/$archive_name"
+	tar -xzf "$tmp_dir/$archive_name" -C "$extract_root"
+	if [[ -d "$install_root" ]]; then
+		mv "$install_root" "$install_root.old.$$"
+	fi
+	if ! mv "$extract_root"/nvim-* "$install_root"; then
+		if [[ -d "$install_root.old.$$" ]]; then
+			mv "$install_root.old.$$" "$install_root"
+		fi
+		printf 'failed to install Neovim: mv failed\n' >&2
+		exit 1
+	fi
+	rm -rf "$install_root.old.$$"
+	ln -sfn "$install_root/bin/nvim" "$HOME/.local/bin/nvim"
+	prepend_path_if_dir "$HOME/.local/bin"
+	trap - RETURN
+	rm -rf "$tmp_dir"
 }
 
 install_neovim() {
-  local current_version
+	local current_version
 
-  if current_version=$(nvim_version); then
-    if version_ge "$current_version" "$minimum_nvim_version"; then
-      log "Neovim already installed at $(nvim_bin) (v$current_version)"
-      PATH="$(dirname "$(nvim_bin)"):$PATH"
-      return
-    fi
+	if current_version=$(nvim_version); then
+		if version_ge "$current_version" "$minimum_nvim_version"; then
+			log "Neovim already installed at $(nvim_bin) (v$current_version)"
+			PATH="$(dirname "$(nvim_bin)"):$PATH"
+			export PATH
+			return
+		fi
 
-    warn "Neovim v$current_version is too old; upgrading to v$minimum_nvim_version or newer"
-  fi
+		warn "Neovim v$current_version is too old; upgrading to v$minimum_nvim_version or newer"
+	fi
 
-  case $(os_id) in
-    debian | arch)
-      install_neovim_from_tarball "linux"
-      ;;
-    macos)
-      install_neovim_from_tarball "macos"
-      ;;
-    *)
-      printf 'unsupported platform for Neovim bootstrap\n' >&2
-      exit 1
-      ;;
-  esac
+	case $(os_id) in
+	debian | arch)
+		install_neovim_from_tarball "linux"
+		;;
+	macos)
+		install_neovim_from_tarball "macos"
+		;;
+	*)
+		printf 'unsupported platform for Neovim bootstrap\n' >&2
+		exit 1
+		;;
+	esac
 
-  if ! current_version=$(nvim_version); then
-    printf 'Neovim installation completed but version could not be detected\n' >&2
-    exit 1
-  fi
+	if ! current_version=$(nvim_version); then
+		printf 'Neovim installation completed but version could not be detected\n' >&2
+		exit 1
+	fi
 
-  if ! version_ge "$current_version" "$minimum_nvim_version"; then
-    printf 'Neovim installation completed but version %s is still below required %s\n' "$current_version" "$minimum_nvim_version" >&2
-    exit 1
-  fi
+	if ! version_ge "$current_version" "$minimum_nvim_version"; then
+		printf 'Neovim installation completed but version %s is still below required %s\n' "$current_version" "$minimum_nvim_version" >&2
+		exit 1
+	fi
 }
 
 chezmoi_bin() {
-  if need_cmd chezmoi; then
-    command -v chezmoi
-    return
-  fi
+	if need_cmd chezmoi; then
+		command -v chezmoi
+		return
+	fi
 
-  if [[ -x "$HOME/.local/bin/chezmoi" ]]; then
-    printf '%s\n' "$HOME/.local/bin/chezmoi"
-    return
-  fi
+	if [[ -x "$HOME/.local/bin/chezmoi" ]]; then
+		printf '%s\n' "$HOME/.local/bin/chezmoi"
+		return
+	fi
 
-  if [[ -x "$HOME/bin/chezmoi" ]]; then
-    printf '%s\n' "$HOME/bin/chezmoi"
-    return
-  fi
+	if [[ -x "$HOME/bin/chezmoi" ]]; then
+		printf '%s\n' "$HOME/bin/chezmoi"
+		return
+	fi
 
-  return 1
+	return 1
 }
 
 install_chezmoi() {
-  local chezmoi_path
+	local chezmoi_path
 
-  if chezmoi_path=$(chezmoi_bin); then
-    log "chezmoi already installed at $chezmoi_path"
-    PATH="$(dirname "$chezmoi_path"):$PATH"
-    return
-  fi
+	if chezmoi_path=$(chezmoi_bin); then
+		log "chezmoi already installed at $chezmoi_path"
+		PATH="$(dirname "$chezmoi_path"):$PATH"
+		export PATH
+		return
+	fi
 
-  if ! need_cmd curl; then
-    printf 'missing required command: curl\n' >&2
-    exit 1
-  fi
+	if ! need_cmd curl; then
+		printf 'missing required command: curl\n' >&2
+		exit 1
+	fi
 
-  log "Installing chezmoi"
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-  append_path_if_dir "$HOME/.local/bin"
+	log "Installing chezmoi"
+	sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+	prepend_path_if_dir "$HOME/.local/bin"
 
-  if chezmoi_path=$(chezmoi_bin); then
-    PATH="$(dirname "$chezmoi_path"):$PATH"
-    return
-  fi
+	if chezmoi_path=$(chezmoi_bin); then
+		PATH="$(dirname "$chezmoi_path"):$PATH"
+		export PATH
+		return
+	fi
 
-  printf 'chezmoi installation completed but binary was not found in PATH, $HOME/.local/bin, or $HOME/bin\n' >&2
-  exit 1
+	printf 'chezmoi installation completed but binary was not found in PATH, $HOME/.local/bin, or $HOME/bin\n' >&2
+	exit 1
 }
 
 install_opencode() {
-  local opencode_path
+	local opencode_path
 
-  if opencode_path=$(opencode_bin); then
-    log "OpenCode already installed at $opencode_path"
-    PATH="$(dirname "$opencode_path"):$PATH"
-    return
-  fi
+	if opencode_path=$(opencode_bin); then
+		log "OpenCode already installed at $opencode_path"
+		PATH="$(dirname "$opencode_path"):$PATH"
+		export PATH
+		return
+	fi
 
-  if ! need_cmd curl; then
-    printf 'missing required command: curl\n' >&2
-    exit 1
-  fi
+	if ! need_cmd curl; then
+		printf 'missing required command: curl\n' >&2
+		exit 1
+	fi
 
-  log "Installing OpenCode"
-  /bin/bash -c "$(curl -fsSL https://opencode.ai/install)"
+	log "Installing OpenCode"
+	/bin/bash -c "$(curl -fsSL https://opencode.ai/install)"
 
-  if opencode_path=$(opencode_bin); then
-    PATH="$(dirname "$opencode_path"):$PATH"
-    return
-  fi
+	if opencode_path=$(opencode_bin); then
+		PATH="$(dirname "$opencode_path"):$PATH"
+		export PATH
+		return
+	fi
 
-  printf 'OpenCode installation completed but binary was not found in PATH, $HOME/.opencode/bin, or $HOME/.local/bin\n' >&2
-  exit 1
+	printf 'OpenCode installation completed but binary was not found in PATH, $HOME/.opencode/bin, or $HOME/.local/bin\n' >&2
+	exit 1
 }
 
 install_nvm() {
-  local nvm_sh
-  local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
-  local nvm_version
+	local nvm_sh
+	local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+	local nvm_version
 
-  if nvm_sh=$(nvm_sh_path); then
-    # shellcheck disable=SC1090
-    . "$nvm_sh"
-    if nvm_version=$(nvm --version 2>/dev/null); then
-      log "nvm already installed at $(dirname "$nvm_sh") (v$nvm_version)"
-      return
-    fi
-  fi
+	if nvm_sh=$(nvm_sh_path); then
+		# shellcheck disable=SC1090
+		. "$nvm_sh"
+		if nvm_version=$(nvm --version 2>/dev/null); then
+			log "nvm already installed at $(dirname "$nvm_sh") (v$nvm_version)"
+			return
+		fi
+	fi
 
-  if ! need_cmd git; then
-    printf 'missing required command: git\n' >&2
-    exit 1
-  fi
+	if ! need_cmd git; then
+		printf 'missing required command: git\n' >&2
+		exit 1
+	fi
 
-  log "Installing nvm"
-  rm -rf "$nvm_dir"
-  git clone --depth 1 https://github.com/nvm-sh/nvm.git "$nvm_dir"
+	if [[ -d "$nvm_dir/.git" ]]; then
+		log "Updating nvm"
+		git -C "$nvm_dir" fetch --depth 1 origin
+		git -C "$nvm_dir" checkout FETCH_HEAD
+	else
+		log "Installing nvm"
+		git clone --depth 1 https://github.com/nvm-sh/nvm.git "$nvm_dir"
+	fi
 
-  if ! load_nvm || ! nvm_version=$(nvm --version 2>/dev/null); then
-    printf 'nvm installation completed but version could not be detected\n' >&2
-    exit 1
-  fi
+	if ! load_nvm || ! nvm_version=$(nvm --version 2>/dev/null); then
+		printf 'nvm installation completed but version could not be detected\n' >&2
+		exit 1
+	fi
 
-  log "Installed nvm v$nvm_version"
+	log "Installed nvm v$nvm_version"
+}
+
+set_login_shell_bash() {
+	if [[ $(os_id) != "macos" ]]; then
+		return
+	fi
+
+	local brew_bash
+	if [[ -x /opt/homebrew/bin/bash ]]; then
+		brew_bash=/opt/homebrew/bin/bash
+	elif [[ -x /usr/local/bin/bash ]]; then
+		brew_bash=/usr/local/bin/bash
+	else
+		warn "Homebrew bash not found; skipping login shell change"
+		return
+	fi
+
+	local current_shell
+	current_shell=$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')
+
+	if [[ "$current_shell" == "$brew_bash" ]]; then
+		log "Login shell already set to $brew_bash"
+		return
+	fi
+
+	if ! grep -qxF "$brew_bash" /etc/shells 2>/dev/null; then
+		log "Adding $brew_bash to /etc/shells"
+		printf '%s\n' "$brew_bash" | sudo tee -a /etc/shells >/dev/null
+	fi
+
+	log "Changing login shell to $brew_bash"
+	if ! chsh -s "$brew_bash"; then
+		warn "could not change login shell automatically"
+		warn "run manually: chsh -s $brew_bash"
+	fi
 }
 
 install_rust_toolchain() {
-  if need_cmd rustc && need_cmd cargo; then
-    log "Rust toolchain already installed"
-    return
-  fi
+	if need_cmd rustc && need_cmd cargo; then
+		log "Rust toolchain already installed"
+		return
+	fi
 
-  if ! need_cmd curl; then
-    printf 'missing required command: curl\n' >&2
-    exit 1
-  fi
+	if ! need_cmd curl; then
+		printf 'missing required command: curl\n' >&2
+		exit 1
+	fi
 
-  log "Installing Rust toolchain with rustup"
-  curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y
-  append_path_if_dir "$HOME/.cargo/bin"
+	log "Installing Rust toolchain with rustup"
+	curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y
 
-  if ! need_cmd rustc || ! need_cmd cargo; then
-    printf 'Rust installation completed but rustc/cargo were not found\n' >&2
-    exit 1
-  fi
+	if [[ -f "$HOME/.cargo/env" ]]; then
+		# shellcheck disable=SC1091
+		. "$HOME/.cargo/env"
+	fi
+	prepend_path_if_dir "$HOME/.cargo/bin"
+
+	if ! need_cmd rustc || ! need_cmd cargo; then
+		printf 'Rust installation completed but rustc/cargo were not found\n' >&2
+		exit 1
+	fi
 }

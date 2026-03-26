@@ -36,6 +36,8 @@ The bootstrap currently supports Debian, Arch Linux, and macOS.
 - Arch Linux: uses `pacman`
 - macOS: installs Homebrew first if needed, then uses `brew`
 
+On macOS, the bootstrap also changes your login shell to the Homebrew-installed bash (adding it to `/etc/shells` if needed). This is necessary because macOS defaults to zsh, which means the bash startup files managed by this repo would never load otherwise.
+
 Core tools installed automatically include:
 
 - `chezmoi`
@@ -59,9 +61,9 @@ Core tools installed automatically include:
 - clipboard helpers (`wl-clipboard`, `xclip`) on Linux
 
 `opencode` is installed with the official install script, which places the binary in a user-local location such as `~/.opencode/bin`.
-`nvm` is cloned into `~/.nvm` and sourced by Bash startup files so interactive shells can use it immediately.
+`nvm` is cloned into `~/.nvm` and sourced by Bash startup files so interactive shells can use it immediately. Re-running `./install` updates nvm in place instead of destroying the existing clone.
 Rust is installed with `rustup` so the standard `cargo` toolchain is available consistently across platforms.
-Neovim is checked for a minimum supported version of `0.11.2`; if the system package is missing or too old, bootstrap installs the current official Neovim release into `~/.local`.
+Neovim is checked for a minimum supported version of `0.11.2`; if the system package is missing or too old, bootstrap installs the current official Neovim release into `~/.local`. Upgrades swap the old install atomically so a failed download never leaves you without a working `nvim`.
 
 ## Apply this repo
 
