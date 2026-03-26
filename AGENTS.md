@@ -32,7 +32,7 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 ### Install / Apply
 - Initial bootstrap from this clone: `./install`
 - Verification-only audit: `./install --verify-only`
-- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, installs a Rust toolchain with `rustup`, runs `chezmoi init --apply "$PWD"`, then performs verification checks and fails if required tools are still missing
+- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, installs a Rust toolchain with `rustup`, runs `chezmoi apply --source "$PWD"` (with `chezmoi init` for first-time setup), sets login shell to Homebrew bash on macOS, then performs verification checks and fails if required tools are still missing
 - `./install --verify-only` skips package installation and chezmoi apply, and only runs verification checks
 - Re-apply changes: `chezmoi apply`
 - Preview rendered changes: `chezmoi diff`

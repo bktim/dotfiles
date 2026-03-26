@@ -15,6 +15,14 @@ elif [ -x /usr/local/bin/brew ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+if [ -d /opt/homebrew/bin ]; then
+  path_prepend /opt/homebrew/bin
+fi
+
+if [ -d /usr/local/bin ]; then
+  path_prepend /usr/local/bin
+fi
+
 if [ -d "$HOME/.opencode/bin" ]; then
   path_prepend "$HOME/.opencode/bin"
 fi

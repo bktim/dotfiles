@@ -91,7 +91,8 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  local cmd=(chezmoi init --apply "$repo_dir")
+  chezmoi init "$repo_dir" 2>/dev/null || true
+  local cmd=(chezmoi apply --source "$repo_dir")
   if ((${#chezmoi_args[@]} > 0)); then
     cmd+=("${chezmoi_args[@]}")
   fi
