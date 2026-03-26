@@ -91,12 +91,16 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  chezmoi init "$repo_dir" 2>/dev/null || true
-  local cmd=(chezmoi apply --source "$repo_dir")
-  if ((${#chezmoi_args[@]} > 0)); then
-    cmd+=("${chezmoi_args[@]}")
+  local chezmoi_source
+  if chezmoi_source=$(chezmoi source-path 2>/dev/null) && [[ -d "$chezmoi_source/.git" ]]; then
+    chezmoi update --force
+  else
+    local cmd=(chezmoi init --apply "$repo_dir")
+    if ((${#chezmoi_args[@]} > 0)); then
+      cmd+=("${chezmoi_args[@]}")
+    fi
+    "${cmd[@]}"
   fi
-  "${cmd[@]}"
   sync_neovim_plugins
   check_neovim_health
   verify_tools

@@ -73,15 +73,16 @@ If the repo is already cloned locally:
 ./install
 ```
 
-That bootstrap flow installs missing dependencies, then runs:
+That bootstrap flow installs missing dependencies, then on first run:
 
 ```bash
-chezmoi apply --source "$PWD"
+chezmoi init --apply "$PWD"
 ```
 
-This applies dotfiles directly from the current repo clone, so the files in
-your checkout are always the source of truth. On first run, `chezmoi init`
-is also called to register the source directory.
+On subsequent runs, it uses `chezmoi update` to pull the latest changes from
+the repo and apply them. This keeps your current clone as the active chezmoi
+source directory, so commands like `chezmoi edit ~/.bashrc` work against this
+repo directly.
 
 If you want to initialize directly with chezmoi from another machine, use your git remote with:
 
