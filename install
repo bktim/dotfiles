@@ -39,8 +39,29 @@ parse_args() {
   done
 }
 
+bootstrap_path() {
+  if [[ -z "${PATH:-}" ]]; then
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+  fi
+
+  append_path_if_dir /opt/homebrew/bin
+  append_path_if_dir /usr/local/bin
+  append_path_if_dir /usr/bin
+  append_path_if_dir /bin
+  append_path_if_dir /usr/sbin
+  append_path_if_dir /sbin
+  export PATH
+}
+
 main() {
   parse_args "$@"
+  bootstrap_path
+
+  if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+    printf 'do not run ./install with sudo; it must run as your normal user\n' >&2
+    printf 'on macOS, Homebrew may still prompt for your password when needed\n' >&2
+    exit 1
+  fi
 
   if [[ $verify_only == true ]]; then
     append_path_if_dir "$HOME/.cargo/bin"
