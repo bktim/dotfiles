@@ -4,6 +4,7 @@
     defaultBranch = main
 [core]
     editor = nvim
+    excludesFile = ~/.config/git/ignore
 [pull]
     rebase = true
 [push]
@@ -12,3 +13,31 @@
     enabled = true
 [fetch]
     prune = true
+[merge]
+    conflictstyle = zdiff3
+[diff]
+    colorMoved = default
+    algorithm = histogram
+[branch]
+    sort = -committerdate
+[help]
+    autocorrect = prompt
+[rebase]
+    autosquash = true
+    autostash = true
+[alias]
+    co = checkout
+    sw = switch
+    st = status -sb
+    ci = commit
+    ca = commit --amend
+    cane = commit --amend --no-edit
+    br = branch
+    lg = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'
+    unstage = reset HEAD --
+    last = log -1 HEAD
+    root = rev-parse --show-toplevel
+    fixup = commit --fixup
+    squash = commit --squash
+    wip = commit -am "wip"
+    aliases = config --get-regexp ^alias\\.

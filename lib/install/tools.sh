@@ -17,31 +17,33 @@ opencode_bin() {
 	return 1
 }
 
-nvm_sh_path() {
-	local candidate
-
-	for candidate in \
-		"${NVM_DIR:-$HOME/.nvm}/nvm.sh" \
-		/opt/homebrew/opt/nvm/nvm.sh \
-		/usr/local/opt/nvm/nvm.sh \
-		/usr/share/nvm/nvm.sh; do
-		if [[ -s "$candidate" ]]; then
-			printf '%s\n' "$candidate"
-			return 0
-		fi
-	done
-
-	return 1
-}
-
-load_nvm() {
-	local nvm_sh
-
-	if ! nvm_sh=$(nvm_sh_path); then
-		return 1
+install_fnm() {
+	if need_cmd fnm; then
+		log "fnm already installed at $(command -v fnm)"
+		return
 	fi
 
-	. "$nvm_sh"
+	case $(os_id) in
+	macos)
+		log "Installing fnm"
+		brew install fnm
+		;;
+	debian | arch)
+		if ! need_cmd curl; then
+			printf 'missing required command: curl\n' >&2
+			exit 1
+		fi
+
+		log "Installing fnm"
+		curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/bin" --skip-shell
+		prepend_path_if_dir "$HOME/.local/bin"
+		;;
+	esac
+
+	if ! need_cmd fnm; then
+		printf 'fnm installation completed but binary not found\n' >&2
+		exit 1
+	fi
 }
 
 nvim_bin() {
@@ -205,6 +207,21 @@ chezmoi_bin() {
 	return 1
 }
 
+configure_chezmoi_source() {
+	local config_dir="$HOME/.config/chezmoi"
+	local config_file="$config_dir/chezmoi.toml"
+
+	mkdir -p "$config_dir"
+
+	if [[ -f "$config_file" ]] && grep -qxF "sourceDir = \"$repo_dir\"" "$config_file" 2>/dev/null; then
+		log "chezmoi source already configured: $repo_dir"
+		return
+	fi
+
+	log "Configuring chezmoi source directory: $repo_dir"
+	printf 'sourceDir = "%s"\n' "$repo_dir" > "$config_file"
+}
+
 install_chezmoi() {
 	local chezmoi_path
 
@@ -262,77 +279,6 @@ install_opencode() {
 	exit 1
 }
 
-install_nvm() {
-	local nvm_sh
-	local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
-	local nvm_version
-
-	if nvm_sh=$(nvm_sh_path); then
-		# shellcheck disable=SC1090
-		. "$nvm_sh"
-		if nvm_version=$(nvm --version 2>/dev/null); then
-			log "nvm already installed at $(dirname "$nvm_sh") (v$nvm_version)"
-			return
-		fi
-	fi
-
-	if ! need_cmd git; then
-		printf 'missing required command: git\n' >&2
-		exit 1
-	fi
-
-	if [[ -d "$nvm_dir/.git" ]]; then
-		log "Updating nvm"
-		git -C "$nvm_dir" fetch --depth 1 origin
-		git -C "$nvm_dir" checkout FETCH_HEAD
-	else
-		log "Installing nvm"
-		git clone --depth 1 https://github.com/nvm-sh/nvm.git "$nvm_dir"
-	fi
-
-	if ! load_nvm || ! nvm_version=$(nvm --version 2>/dev/null); then
-		printf 'nvm installation completed but version could not be detected\n' >&2
-		exit 1
-	fi
-
-	log "Installed nvm v$nvm_version"
-}
-
-set_login_shell_bash() {
-	if [[ $(os_id) != "macos" ]]; then
-		return
-	fi
-
-	local brew_bash
-	if [[ -x /opt/homebrew/bin/bash ]]; then
-		brew_bash=/opt/homebrew/bin/bash
-	elif [[ -x /usr/local/bin/bash ]]; then
-		brew_bash=/usr/local/bin/bash
-	else
-		warn "Homebrew bash not found; skipping login shell change"
-		return
-	fi
-
-	local current_shell
-	current_shell=$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')
-
-	if [[ "$current_shell" == "$brew_bash" ]]; then
-		log "Login shell already set to $brew_bash"
-		return
-	fi
-
-	if ! grep -qxF "$brew_bash" /etc/shells 2>/dev/null; then
-		log "Adding $brew_bash to /etc/shells"
-		printf '%s\n' "$brew_bash" | sudo tee -a /etc/shells >/dev/null
-	fi
-
-	log "Changing login shell to $brew_bash"
-	if ! chsh -s "$brew_bash"; then
-		warn "could not change login shell automatically"
-		warn "run manually: chsh -s $brew_bash"
-	fi
-}
-
 install_rust_toolchain() {
 	if need_cmd rustc && need_cmd cargo; then
 		log "Rust toolchain already installed"
@@ -356,5 +302,63 @@ install_rust_toolchain() {
 	if ! need_cmd rustc || ! need_cmd cargo; then
 		printf 'Rust installation completed but rustc/cargo were not found\n' >&2
 		exit 1
+	fi
+}
+
+set_login_shell_bash() {
+	# macOS ships bash 3.2 at /bin/bash. We want Homebrew bash as the login shell.
+	# No-op on non-macOS (users pick their own login shell via distro tooling).
+	if [[ $(os_id) != "macos" ]]; then
+		return
+	fi
+
+	local brew_bash
+	if [[ -x /opt/homebrew/bin/bash ]]; then
+		brew_bash=/opt/homebrew/bin/bash
+	elif [[ -x /usr/local/bin/bash ]]; then
+		brew_bash=/usr/local/bin/bash
+	else
+		warn "Homebrew bash not found; skipping login shell change"
+		return
+	fi
+
+	local current_shell=${SHELL:-}
+	if [[ "$current_shell" == "$brew_bash" ]]; then
+		log "Login shell already $brew_bash"
+		return
+	fi
+
+	if ! grep -qxF "$brew_bash" /etc/shells 2>/dev/null; then
+		log "Registering $brew_bash in /etc/shells"
+		printf '%s\n' "$brew_bash" | run_as_root tee -a /etc/shells >/dev/null
+	fi
+
+	log "Setting login shell to $brew_bash"
+	if ! chsh -s "$brew_bash"; then
+		warn "chsh failed; set login shell manually with: chsh -s $brew_bash"
+	fi
+}
+
+install_hack_nerd_font() {
+	# On macOS the Brewfile installs font-hack-nerd-font via cask; verify presence.
+	# On Linux, font is optional (terminal emulator may ship its own).
+	if [[ $(os_id) != "macos" ]]; then
+		return
+	fi
+
+	if ls "$HOME/Library/Fonts"/HackNerdFont*.ttf >/dev/null 2>&1; then
+		log "Hack Nerd Font already installed (user)"
+		return
+	fi
+
+	if ls /Library/Fonts/HackNerdFont*.ttf >/dev/null 2>&1; then
+		log "Hack Nerd Font already installed (system)"
+		return
+	fi
+
+	# Fallback if Brewfile cask install silently skipped.
+	if need_cmd brew; then
+		log "Installing Hack Nerd Font via Homebrew cask"
+		brew install --cask font-hack-nerd-font || warn "Hack Nerd Font install failed; install manually"
 	fi
 }

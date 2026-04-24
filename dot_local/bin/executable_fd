@@ -1,14 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Shim so scripts/tools can call `fd` uniformly across platforms.
+# Debian ships the binary as `fdfind`; macOS/Arch/Homebrew ship it as `fd`.
+# We must avoid exec'ing ourselves: this script lives at $HOME/.local/bin/fd,
+# which is typically first in PATH, so a bare `command -v fd` resolves here.
+
+self=$(command -v -- "$0" 2>/dev/null || printf '%s' "$0")
+
 if command -v fdfind >/dev/null 2>&1; then
   exec fdfind "$@"
 fi
 
-for fd_bin in /usr/bin/fd /bin/fd /opt/homebrew/bin/fd /usr/local/bin/fd; do
-  if [[ -x "$fd_bin" ]]; then
-    exec "$fd_bin" "$@"
+for candidate in \
+  /opt/homebrew/bin/fd \
+  /usr/local/bin/fd \
+  /usr/bin/fd \
+  /bin/fd; do
+  [[ -x "$candidate" ]] || continue
+  # Skip if candidate resolves to this wrapper (symlink loop protection).
+  if [[ "$candidate" -ef "$self" ]] 2>/dev/null; then
+    continue
   fi
+  exec "$candidate" "$@"
+done
+
+# Last resort: scan PATH for an fd that is not this wrapper.
+IFS=: read -r -a path_entries <<<"$PATH"
+for dir in "${path_entries[@]}"; do
+  [[ -n "$dir" ]] || continue
+  candidate="$dir/fd"
+  [[ -x "$candidate" ]] || continue
+  if [[ "$candidate" -ef "$self" ]] 2>/dev/null; then
+    continue
+  fi
+  exec "$candidate" "$@"
 done
 
 printf 'missing fd/fdfind binary\n' >&2

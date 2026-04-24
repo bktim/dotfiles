@@ -38,6 +38,7 @@ install_packages_debian() {
     shellcheck \
     shfmt \
     tmux \
+    unzip \
     xclip \
     wl-clipboard \
     zoxide
@@ -63,6 +64,7 @@ install_packages_arch() {
     shellcheck \
     shfmt \
     tmux \
+    unzip \
     wl-clipboard \
     xclip \
     zoxide
@@ -70,23 +72,13 @@ install_packages_arch() {
 
 install_packages_macos() {
   install_homebrew
-  log "Installing packages with Homebrew"
-  brew install \
-    bash \
-    bash-completion@2 \
-    chezmoi \
-    fd \
-    fzf \
-    git \
-    go \
-    neovim \
-    node \
-    python \
-    ripgrep \
-    shellcheck \
-    shfmt \
-    tmux \
-    zoxide
+  local brewfile="$repo_dir/Brewfile"
+  if [[ ! -f "$brewfile" ]]; then
+    printf 'missing Brewfile at %s\n' "$brewfile" >&2
+    exit 1
+  fi
+  log "Installing packages from Brewfile"
+  brew bundle --file="$brewfile"
 }
 
 install_packages() {

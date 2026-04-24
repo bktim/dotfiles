@@ -1,4 +1,22 @@
+# Ensure a valid UTF-8 locale. macOS Terminal often sets LC_CTYPE to the bare
+# string "UTF-8" (not a real locale) and may leave LANG empty, which causes
+# "setlocale: LC_COLLATE: cannot change locale ()" warnings from bash/libc.
+if [ -z "${LANG:-}" ]; then
+  export LANG="en_US.UTF-8"
+fi
+
+# Fix macOS Terminal's broken LC_CTYPE="UTF-8" (not a valid locale name).
+case "${LC_CTYPE:-}" in
+  UTF-8|utf-8) export LC_CTYPE="en_US.UTF-8" ;;
+esac
+
+# Clear empty LC_ALL to avoid confusing setlocale.
+if [ "${LC_ALL+x}" = x ] && [ -z "${LC_ALL}" ]; then
+  unset LC_ALL
+fi
+
 path_prepend() {
+  [ -d "$1" ] || return 0
   case ":$PATH:" in
     *":$1:"*) ;;
     *) PATH="$1:$PATH" ;;
@@ -15,31 +33,16 @@ elif [ -x /usr/local/bin/brew ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-if [ -d /opt/homebrew/bin ]; then
-  path_prepend /opt/homebrew/bin
-fi
-
-if [ -d /usr/local/bin ]; then
-  path_prepend /usr/local/bin
-fi
-
-if [ -d "$HOME/.opencode/bin" ]; then
-  path_prepend "$HOME/.opencode/bin"
-fi
-
-if [ -d "$HOME/.cargo/bin" ]; then
-  path_prepend "$HOME/.cargo/bin"
-fi
-
-if [ -d "$HOME/bin" ]; then
-  path_prepend "$HOME/bin"
-fi
-
-if [ -d "$HOME/.local/bin" ]; then
-  path_prepend "$HOME/.local/bin"
-fi
-
-export NVM_DIR="$HOME/.nvm"
+path_prepend /opt/homebrew/bin
+path_prepend /usr/local/bin
+path_prepend "$HOME/.opencode/bin"
+path_prepend "$HOME/.cargo/bin"
+path_prepend "$HOME/bin"
+path_prepend "$HOME/.local/bin"
 
 export PATH
 export _DOT_PROFILE_LOADED=1
+
+export EDITOR=nvim
+export VISUAL=nvim
+export PAGER=less

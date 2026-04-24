@@ -1,6 +1,5 @@
 local opt = vim.opt
 
-opt.clipboard = "unnamedplus"
 opt.conceallevel = 3
 opt.confirm = true
 opt.cursorline = true

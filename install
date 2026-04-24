@@ -7,7 +7,6 @@ case ${BASH_SOURCE[0]} in
 esac
 repo_dir=$(CDPATH= cd -- "$repo_dir" && pwd)
 verify_only=false
-chezmoi_args=()
 minimum_nvim_version="0.11.2"
 
 source "$repo_dir/lib/install/common.sh"
@@ -17,7 +16,7 @@ source "$repo_dir/lib/install/verify.sh"
 
 usage() {
   printf '%s\n' \
-    'Usage: ./install [--verify-only] [chezmoi init args...]' \
+    'Usage: ./install [--verify-only]' \
     '' \
     'Options:' \
     '  --verify-only  Skip installation and chezmoi apply; only run verification checks' \
@@ -35,7 +34,9 @@ parse_args() {
         exit 0
         ;;
       *)
-        chezmoi_args+=("$1")
+        printf 'unknown option: %s\n' "$1" >&2
+        usage
+        exit 1
         ;;
     esac
     shift
@@ -79,10 +80,12 @@ main() {
 
   install_packages
   set_login_shell_bash
+  install_hack_nerd_font
   install_neovim
   install_chezmoi
+  configure_chezmoi_source
   install_opencode
-  install_nvm
+  install_fnm
   install_rust_toolchain
 
   if ! need_cmd chezmoi; then
@@ -91,16 +94,7 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  local chezmoi_source
-  if chezmoi_source=$(chezmoi source-path 2>/dev/null) && [[ -d "$chezmoi_source/.git" ]]; then
-    chezmoi update --force
-  else
-    local cmd=(chezmoi init --apply "$repo_dir")
-    if ((${#chezmoi_args[@]} > 0)); then
-      cmd+=("${chezmoi_args[@]}")
-    fi
-    "${cmd[@]}"
-  fi
+  chezmoi apply --source "$repo_dir"
   sync_neovim_plugins
   check_neovim_health
   verify_tools

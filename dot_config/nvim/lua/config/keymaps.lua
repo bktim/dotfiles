@@ -4,6 +4,4 @@ map("n", "<leader>fn", function()
   vim.cmd("enew")
 end, { desc = "New buffer" })
 
-map("n", "<leader>ur", function()
-  vim.cmd("source $MYVIMRC")
-end, { desc = "Reload config" })
+
