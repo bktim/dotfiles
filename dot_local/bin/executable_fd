@@ -22,6 +22,7 @@ for candidate in \
   if [[ "$candidate" -ef "$self" ]] 2>/dev/null; then
     continue
   fi
+  # shellcheck disable=SC2093 # exec replaces the process; loop cannot continue past it
   exec "$candidate" "$@"
 done
 
@@ -34,6 +35,7 @@ for dir in "${path_entries[@]}"; do
   if [[ "$candidate" -ef "$self" ]] 2>/dev/null; then
     continue
   fi
+  # shellcheck disable=SC2093 # exec replaces the process; loop cannot continue past it
   exec "$candidate" "$@"
 done
 
