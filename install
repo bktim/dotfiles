@@ -5,6 +5,7 @@ case ${BASH_SOURCE[0]} in
   */*) repo_dir=${BASH_SOURCE[0]%/*} ;;
   *) repo_dir=. ;;
 esac
+# shellcheck disable=SC1007 # CDPATH= cd intentionally clears CDPATH for one command
 repo_dir=$(CDPATH= cd -- "$repo_dir" && pwd)
 verify_only=false
 minimum_nvim_version="0.11.2"
@@ -29,7 +30,7 @@ parse_args() {
       --verify-only)
         verify_only=true
         ;;
-      -h|--help)
+      -h | --help)
         usage
         exit 0
         ;;

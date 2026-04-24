@@ -1,6 +1,6 @@
 case $- in
-*i*) ;;
-*) return ;;
+  *i*) ;;
+  *) return ;;
 esac
 
 source_first() {
@@ -8,6 +8,7 @@ source_first() {
 
   for file in "$@"; do
     if [[ -f "$file" ]]; then
+      # shellcheck disable=SC1090 # dynamic source path is intentional
       . "$file"
       return 0
     fi
@@ -17,10 +18,12 @@ source_first() {
 }
 
 if [[ -z "${_DOT_PROFILE_LOADED:-}" && -f "$HOME/.profile" ]]; then
+  # shellcheck source=dot_profile
   . "$HOME/.profile"
 fi
 
 if [[ -f "$HOME/.bash_aliases" ]]; then
+  # shellcheck source=dot_bash_aliases
   . "$HOME/.bash_aliases"
 fi
 
@@ -28,10 +31,15 @@ if command -v dircolors >/dev/null 2>&1; then
   eval "$(dircolors -b)"
 fi
 if ls --color=auto /dev/null >/dev/null 2>&1; then
-  alias ls='ls --color=auto'
+  _dotfiles_ls_opts='--color=auto'
 elif ls -G /dev/null >/dev/null 2>&1; then
-  alias ls='ls -G'
+  _dotfiles_ls_opts='-G'
 fi
+if [[ -n "${_dotfiles_ls_opts:-}" ]]; then
+  # shellcheck disable=SC2139 # opts expand at alias-definition time, intentional
+  alias ls="ls $_dotfiles_ls_opts"
+fi
+unset _dotfiles_ls_opts
 
 source_first \
   /usr/share/bash-completion/bash_completion \

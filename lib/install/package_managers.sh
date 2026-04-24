@@ -1,3 +1,6 @@
+# This file is sourced by ../../install. `repo_dir` is assigned there.
+# shellcheck disable=SC2154
+
 install_homebrew() {
   if need_cmd brew; then
     return

@@ -1,0 +1,12 @@
+# Project-wide shellcheck configuration.
+# Docs: https://www.shellcheck.net/wiki/Ignore
+
+# Allow shellcheck to follow sourced files it can resolve statically.
+external-sources=true
+
+# Enable useful optional checks.
+enable=deprecate-which
+
+# SC1091: sourced files may live outside the repo at runtime (e.g. /etc/os-release,
+# $HOME/.profile). Shellcheck can't follow those; we accept the info-level noise
+# via inline directives where it matters.

@@ -1,0 +1,45 @@
+# Pre-commit hooks. Install: `pre-commit install` (after `brew install pre-commit`).
+# Run manually: `pre-commit run --all-files`.
+# Flag sets must stay in sync with scripts/lint and .github/workflows/lint.yml.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 3.0.3
+    hooks:
+      - id: editorconfig-checker
+        exclude: ^(\.git/|Brewfile$)
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.11.0-1
+    hooks:
+      - id: shfmt
+        args: [-i, "2", -ci, -bn, -w]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck (with source following)
+        args: [-x, -s, bash]
+        files: ^(install|lib/install/.*\.sh|dot_local/bin/executable_.*)$
+      - id: shellcheck
+        name: shellcheck (interactive rc files)
+        args: [-s, bash]
+        files: ^(dot_bashrc|dot_profile|dot_bash_profile|dot_bash_aliases)$
+
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v2.0.2
+    hooks:
+      - id: stylua
+        files: ^dot_config/nvim/.*\.lua$

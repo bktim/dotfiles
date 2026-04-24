@@ -23,6 +23,26 @@ chezmoi edit ~/.bashrc    # edit a managed file
 chezmoi cd                # open source repo
 ```
 
+## Lint / format
+
+All shell, Lua, and whitespace checks are enforced by one script:
+
+```bash
+scripts/lint              # check everything (same as CI / pre-commit)
+scripts/lint --fix        # auto-format shell (shfmt) and Lua (stylua)
+```
+
+Enable pre-commit hooks once per clone:
+
+```bash
+pre-commit install
+```
+
+Tool flags live in one place per tool and are kept in sync across
+`scripts/lint`, `.pre-commit-config.yaml`, `.github/workflows/lint.yml`, and
+the Neovim `conform.nvim` config. Editor behavior is pinned via
+`.editorconfig`, `.shellcheckrc`, and `stylua.toml`.
+
 ## Machine-specific Git
 
 Put name/email/signing keys in `~/.gitconfig.local` — it's included automatically, never tracked.

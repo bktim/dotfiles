@@ -33,6 +33,9 @@ brew "python"
 # Shell tooling
 brew "shellcheck"
 brew "shfmt"
+brew "stylua"
+brew "pre-commit"
+brew "editorconfig-checker"
 
 # Fonts
 cask "font-hack-nerd-font"

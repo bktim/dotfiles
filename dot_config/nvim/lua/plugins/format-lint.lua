@@ -21,7 +21,8 @@ return {
       },
       formatters = {
         shfmt = {
-          prepend_args = { "-i", "2", "-ci" },
+          -- Keep in sync with scripts/lint and .pre-commit-config.yaml.
+          prepend_args = { "-i", "2", "-ci", "-bn" },
         },
       },
     },

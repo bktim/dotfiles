@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Run every linter/formatter-check used by CI and pre-commit hooks.
+# Single source of truth for tool flags; keep in sync with
+# .pre-commit-config.yaml, .github/workflows/lint.yml, and the Neovim
+# conform.nvim/nvim-lint config.
+set -euo pipefail
+
+case ${BASH_SOURCE[0]} in
+  */*) repo_dir=${BASH_SOURCE[0]%/*}/.. ;;
+  *) repo_dir=. ;;
+esac
+repo_dir=$(CDPATH='' cd -- "$repo_dir" && pwd)
+cd "$repo_dir"
+
+fix=false
+if [[ ${1:-} == --fix ]]; then
+  fix=true
+fi
+
+shell_files_with_sources=(
+  install
+  dot_local/bin/executable_fd
+  lib/install/common.sh
+  lib/install/package_managers.sh
+  lib/install/tools.sh
+  lib/install/verify.sh
+)
+
+shell_files_standalone=(
+  dot_bashrc
+  dot_profile
+  dot_bash_profile
+  dot_bash_aliases
+)
+
+all_shell_files=("${shell_files_with_sources[@]}" "${shell_files_standalone[@]}")
+
+lua_paths=(dot_config/nvim)
+
+have() { command -v "$1" > /dev/null 2>&1; }
+
+step() { printf '\n==> %s\n' "$*"; }
+
+fail=0
+
+if have shfmt; then
+  step "shfmt"
+  if $fix; then
+    shfmt -i 2 -ci -bn -w "${all_shell_files[@]}"
+  else
+    shfmt -i 2 -ci -bn -d "${all_shell_files[@]}" || fail=1
+  fi
+else
+  printf 'warning: shfmt not installed; skipping\n' >&2
+fi
+
+if have shellcheck; then
+  step "shellcheck (with source following)"
+  shellcheck -x -s bash "${shell_files_with_sources[@]}" || fail=1
+  step "shellcheck (interactive rc files)"
+  shellcheck -s bash "${shell_files_standalone[@]}" || fail=1
+else
+  printf 'warning: shellcheck not installed; skipping\n' >&2
+fi
+
+if have stylua; then
+  step "stylua"
+  if $fix; then
+    stylua "${lua_paths[@]}"
+  else
+    stylua --check "${lua_paths[@]}" || fail=1
+  fi
+else
+  printf 'warning: stylua not installed; skipping\n' >&2
+fi
+
+if have nvim; then
+  step "nvim --headless syntax check"
+  nvim --headless +qa 2> /dev/null || fail=1
+else
+  printf 'warning: nvim not installed; skipping\n' >&2
+fi
+
+if ((fail != 0)); then
+  printf '\nlint: FAIL\n' >&2
+  exit 1
+fi
+
+printf '\nlint: OK\n'

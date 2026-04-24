@@ -2,6 +2,14 @@ AGENTS.md
 README.md
 install
 .gitignore
+.editorconfig
+.shellcheckrc
+.pre-commit-config.yaml
+stylua.toml
 Brewfile
 lib
 lib/**
+scripts
+scripts/**
+.github
+.github/**

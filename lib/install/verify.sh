@@ -1,3 +1,6 @@
+# This file is sourced by ../../install. `minimum_nvim_version` is assigned there.
+# shellcheck disable=SC2154
+
 sync_neovim_plugins() {
   if ! need_cmd nvim; then
     warn "Skipping Neovim plugin sync because nvim is not installed"
