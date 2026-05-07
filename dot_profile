@@ -1,13 +1,14 @@
 # Ensure a valid UTF-8 locale. macOS Terminal often sets LC_CTYPE to the bare
 # string "UTF-8" (not a real locale) and may leave LANG empty, which causes
 # "setlocale: LC_COLLATE: cannot change locale ()" warnings from bash/libc.
+# C.UTF-8 is available on all modern systems (macOS, Debian, Arch).
 if [ -z "${LANG:-}" ]; then
-  export LANG="en_US.UTF-8"
+  export LANG="C.UTF-8"
 fi
 
 # Fix macOS Terminal's broken LC_CTYPE="UTF-8" (not a valid locale name).
 case "${LC_CTYPE:-}" in
-  UTF-8 | utf-8) export LC_CTYPE="en_US.UTF-8" ;;
+  UTF-8 | utf-8) export LC_CTYPE="C.UTF-8" ;;
 esac
 
 # Clear empty LC_ALL to avoid confusing setlocale.
@@ -46,3 +47,5 @@ export _DOT_PROFILE_LOADED=1
 export EDITOR=nvim
 export VISUAL=nvim
 export PAGER=less
+
+export OMO_SEND_ANONYMOUS_TELEMETRY=0

@@ -24,6 +24,7 @@ shell_files_with_sources=(
   lib/install/package_managers.sh
   lib/install/tools.sh
   lib/install/verify.sh
+  scripts/lint
 )
 
 shell_files_standalone=(
@@ -37,7 +38,7 @@ all_shell_files=("${shell_files_with_sources[@]}" "${shell_files_standalone[@]}"
 
 lua_paths=(dot_config/nvim)
 
-have() { command -v "$1" > /dev/null 2>&1; }
+have() { command -v "$1" >/dev/null 2>&1; }
 
 step() { printf '\n==> %s\n' "$*"; }
 
@@ -76,7 +77,7 @@ fi
 
 if have nvim; then
   step "nvim --headless syntax check"
-  nvim --headless +qa 2> /dev/null || fail=1
+  nvim --headless +qa 2>&1 || fail=1
 else
   printf 'warning: nvim not installed; skipping\n' >&2
 fi

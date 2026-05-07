@@ -32,7 +32,7 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 ### Install / Apply
 - Initial bootstrap from this clone: `./install`
 - Verification-only audit: `./install --verify-only`
-- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, installs a Rust toolchain with `rustup`, runs `chezmoi init --apply "$PWD"` on first run or `chezmoi update` on re-runs, sets login shell to Homebrew bash on macOS, then performs verification checks and fails if required tools are still missing
+- `./install` installs required tools for Debian, Arch, or macOS, installs Homebrew on macOS if needed, installs `opencode`, installs a Rust toolchain with `rustup`, runs `chezmoi init --apply "$PWD"`, then performs verification checks and fails if required tools are still missing
 - `./install --verify-only` skips package installation and chezmoi apply, and only runs verification checks
 - Re-apply changes: `chezmoi apply`
 - Preview rendered changes: `chezmoi diff`
@@ -53,11 +53,10 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 - Known entrypoints:
   - `bash -n install`
   - `bash -n dot_local/bin/executable_fd`
-  - `bash -n dot_local/bin/executable_devvm-info`
 - Batch syntax check for tracked scripts:
-  - `bash -n install dot_local/bin/executable_fd dot_local/bin/executable_devvm-info`
-- No checked-in `shellcheck` config exists.
-- No checked-in `stylua` config exists.
+  - `bash -n install dot_local/bin/executable_fd`
+- ShellCheck config: `.shellcheckrc`
+- StyLua config: `stylua.toml`
 
 ### Tests
 - No formal automated test suite exists today.
@@ -75,7 +74,7 @@ Guidance for coding agents working in this chezmoi-managed dotfiles repo.
 ## Recommended Validation By Change Type
 - Shell startup files changed:
   - `chezmoi diff`
-  - `bash -n install dot_local/bin/executable_fd dot_local/bin/executable_devvm-info`
+  - `bash -n install dot_local/bin/executable_fd`
 - Helper scripts changed:
   - `bash -n path/to/script`
   - run the script if it is clearly safe and side effects are minimal

@@ -1,25 +1,11 @@
+# OS artifacts
 .DS_Store
 .AppleDouble
+Thumbs.db
 
+# Editor artifacts
 .idea/
 .vscode/
-
-__pycache__/
-*.py[cod]
-.venv/
-*.egg-info/
-
-node_modules/
-.npm/
-
-dist/
-build/
-target/
-
 *.swp
 *.swo
 *~
-
-.env
-*.log
-Thumbs.db

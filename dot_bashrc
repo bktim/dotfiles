@@ -73,11 +73,7 @@ shopt -s histappend
 shopt -s checkwinsize
 shopt -s cmdhist
 
-if ((BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3))); then
-  HISTCONTROL=ignoredups:erasedups
-else
-  HISTCONTROL=ignoredups
-fi
+HISTCONTROL=ignoredups:erasedups
 
 HISTIGNORE="ls:ll:cd:pwd:exit:clear"
 

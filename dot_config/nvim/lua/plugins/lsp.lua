@@ -1,6 +1,6 @@
 return {
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     opts = {
       ensure_installed = {
         "bash-language-server",
@@ -12,7 +12,6 @@ return {
         "shellcheck",
         "shfmt",
         "stylua",
-        "typescript-language-server",
         "vtsls",
         "json-lsp",
         "yaml-language-server",
@@ -31,6 +30,7 @@ return {
         lua_ls = {},
         pyright = {},
         rust_analyzer = {},
+        vtsls = {},
         jsonls = {},
         yamlls = {},
         marksman = {},

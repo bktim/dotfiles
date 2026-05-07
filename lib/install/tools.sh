@@ -211,21 +211,6 @@ chezmoi_bin() {
   return 1
 }
 
-configure_chezmoi_source() {
-  local config_dir="$HOME/.config/chezmoi"
-  local config_file="$config_dir/chezmoi.toml"
-
-  mkdir -p "$config_dir"
-
-  if [[ -f "$config_file" ]] && grep -qxF "sourceDir = \"$repo_dir\"" "$config_file" 2>/dev/null; then
-    log "chezmoi source already configured: $repo_dir"
-    return
-  fi
-
-  log "Configuring chezmoi source directory: $repo_dir"
-  printf 'sourceDir = "%s"\n' "$repo_dir" >"$config_file"
-}
-
 install_chezmoi() {
   local chezmoi_path
 
@@ -308,63 +293,5 @@ install_rust_toolchain() {
   if ! need_cmd rustc || ! need_cmd cargo; then
     printf 'Rust installation completed but rustc/cargo were not found\n' >&2
     exit 1
-  fi
-}
-
-set_login_shell_bash() {
-  # macOS ships bash 3.2 at /bin/bash. We want Homebrew bash as the login shell.
-  # No-op on non-macOS (users pick their own login shell via distro tooling).
-  if [[ $(os_id) != "macos" ]]; then
-    return
-  fi
-
-  local brew_bash
-  if [[ -x /opt/homebrew/bin/bash ]]; then
-    brew_bash=/opt/homebrew/bin/bash
-  elif [[ -x /usr/local/bin/bash ]]; then
-    brew_bash=/usr/local/bin/bash
-  else
-    warn "Homebrew bash not found; skipping login shell change"
-    return
-  fi
-
-  local current_shell=${SHELL:-}
-  if [[ "$current_shell" == "$brew_bash" ]]; then
-    log "Login shell already $brew_bash"
-    return
-  fi
-
-  if ! grep -qxF "$brew_bash" /etc/shells 2>/dev/null; then
-    log "Registering $brew_bash in /etc/shells"
-    printf '%s\n' "$brew_bash" | run_as_root tee -a /etc/shells >/dev/null
-  fi
-
-  log "Setting login shell to $brew_bash"
-  if ! chsh -s "$brew_bash"; then
-    warn "chsh failed; set login shell manually with: chsh -s $brew_bash"
-  fi
-}
-
-install_hack_nerd_font() {
-  # On macOS the Brewfile installs font-hack-nerd-font via cask; verify presence.
-  # On Linux, font is optional (terminal emulator may ship its own).
-  if [[ $(os_id) != "macos" ]]; then
-    return
-  fi
-
-  if ls "$HOME/Library/Fonts"/HackNerdFont*.ttf >/dev/null 2>&1; then
-    log "Hack Nerd Font already installed (user)"
-    return
-  fi
-
-  if ls /Library/Fonts/HackNerdFont*.ttf >/dev/null 2>&1; then
-    log "Hack Nerd Font already installed (system)"
-    return
-  fi
-
-  # Fallback if Brewfile cask install silently skipped.
-  if need_cmd brew; then
-    log "Installing Hack Nerd Font via Homebrew cask"
-    brew install --cask font-hack-nerd-font || warn "Hack Nerd Font install failed; install manually"
   fi
 }

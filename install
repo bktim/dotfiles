@@ -49,12 +49,12 @@ bootstrap_path() {
     PATH="/usr/bin:/bin:/usr/sbin:/sbin"
   fi
 
-  prepend_path_if_dir /opt/homebrew/bin
-  prepend_path_if_dir /usr/local/bin
-  prepend_path_if_dir /usr/bin
-  prepend_path_if_dir /bin
-  prepend_path_if_dir /usr/sbin
   prepend_path_if_dir /sbin
+  prepend_path_if_dir /usr/sbin
+  prepend_path_if_dir /bin
+  prepend_path_if_dir /usr/bin
+  prepend_path_if_dir /usr/local/bin
+  prepend_path_if_dir /opt/homebrew/bin
   export PATH
 }
 
@@ -80,11 +80,8 @@ main() {
   fi
 
   install_packages
-  set_login_shell_bash
-  install_hack_nerd_font
   install_neovim
   install_chezmoi
-  configure_chezmoi_source
   install_opencode
   install_fnm
   install_rust_toolchain
@@ -95,7 +92,7 @@ main() {
   fi
 
   log "Applying dotfiles with chezmoi"
-  chezmoi apply --source "$repo_dir"
+  chezmoi init --apply "$repo_dir"
   sync_neovim_plugins
   check_neovim_health
   verify_tools

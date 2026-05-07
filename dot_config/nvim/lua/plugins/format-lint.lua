@@ -11,7 +11,7 @@ return {
         jsonc = { "prettierd" },
         lua = { "stylua" },
         markdown = { "prettierd" },
-        python = { "ruff_format", "ruff_fix" },
+        python = { "ruff_fix", "ruff_format" },
         rust = { "rustfmt" },
         sh = { "shfmt" },
         toml = { "taplo" },

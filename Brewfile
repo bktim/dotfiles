@@ -2,8 +2,6 @@
 # Applied via `brew bundle --file=<repo>/Brewfile` from ./install.
 # Safe to re-run; brew bundle is idempotent.
 
-tap "homebrew/bundle"
-
 # Shells & core CLI
 brew "bash"
 brew "bash-completion@2"
