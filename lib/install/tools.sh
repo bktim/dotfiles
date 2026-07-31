@@ -211,6 +211,36 @@ chezmoi_bin() {
   return 1
 }
 
+configure_chezmoi_source() {
+  local config_dir="$HOME/.config/chezmoi"
+  local config_file="$config_dir/chezmoi.toml"
+
+  mkdir -p "$config_dir"
+
+  if [[ -L "$config_file" || (-e "$config_file" && ! -f "$config_file") ]]; then
+    warn "chezmoi config is not a regular file: $config_file"
+    return 1
+  fi
+
+  if [[ -f "$config_file" ]]; then
+    if CHEZMOI_SOURCE_DIR="$repo_dir" awk '
+      /^[[:space:]]*\[/ { exit }
+      $0 == "sourceDir = \"" ENVIRON["CHEZMOI_SOURCE_DIR"] "\"" { found = 1; exit }
+      END { exit !found }
+    ' "$config_file"; then
+      log "chezmoi source already configured: $repo_dir"
+      return
+    fi
+
+    warn "Existing chezmoi config left unchanged: $config_file"
+    warn "Set root sourceDir = \"$repo_dir\" manually, then rerun"
+    return 1
+  fi
+
+  log "Configuring chezmoi source directory: $repo_dir"
+  printf 'sourceDir = "%s"\n' "$repo_dir" >"$config_file"
+}
+
 install_chezmoi() {
   local chezmoi_path
 

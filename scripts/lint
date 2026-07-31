@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Run every linter/formatter-check used by CI and pre-commit hooks.
-# Single source of truth for tool flags; keep in sync with
-# .pre-commit-config.yaml, .github/workflows/lint.yml, and the Neovim
-# conform.nvim/nvim-lint config.
+# Runs repository shell, Lua, and Neovim checks.
+# Tool flags stay aligned with pre-commit, CI, and Neovim config.
 set -euo pipefail
 
 case ${BASH_SOURCE[0]} in
@@ -43,6 +41,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 step() { printf '\n==> %s\n' "$*"; }
 
 fail=0
+missing_tools=()
 
 if have shfmt; then
   step "shfmt"
@@ -53,6 +52,7 @@ if have shfmt; then
   fi
 else
   printf 'warning: shfmt not installed; skipping\n' >&2
+  missing_tools+=(shfmt)
 fi
 
 if have shellcheck; then
@@ -62,6 +62,7 @@ if have shellcheck; then
   shellcheck -s bash "${shell_files_standalone[@]}" || fail=1
 else
   printf 'warning: shellcheck not installed; skipping\n' >&2
+  missing_tools+=(shellcheck)
 fi
 
 if have stylua; then
@@ -73,18 +74,26 @@ if have stylua; then
   fi
 else
   printf 'warning: stylua not installed; skipping\n' >&2
+  missing_tools+=(stylua)
 fi
 
 if have nvim; then
   step "nvim --headless syntax check"
-  nvim --headless +qa 2>&1 || fail=1
+  nvim --headless +qa || fail=1
 else
   printf 'warning: nvim not installed; skipping\n' >&2
+  missing_tools+=(nvim)
 fi
 
 if ((fail != 0)); then
   printf '\nlint: FAIL\n' >&2
   exit 1
+fi
+
+if ((${#missing_tools[@]} != 0)); then
+  missing_list=$(IFS=', '; printf '%s' "${missing_tools[*]}")
+  printf '\nlint: PARTIAL (missing: %s)\n' "$missing_list"
+  exit 0
 fi
 
 printf '\nlint: OK\n'

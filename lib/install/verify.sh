@@ -10,6 +10,7 @@ sync_neovim_plugins() {
   log "Syncing Neovim plugins"
   if ! nvim --headless "+Lazy! sync" +qa; then
     warn "Neovim plugin sync failed; run 'nvim --headless \"+Lazy! sync\" +qa' later"
+    return 1
   fi
 }
 

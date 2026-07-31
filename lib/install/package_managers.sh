@@ -50,7 +50,7 @@ install_packages_debian() {
 install_packages_arch() {
   require_sudo
   log "Installing packages with pacman"
-  run_as_root pacman -Sy --needed --noconfirm \
+  run_as_root pacman -Syu --needed --noconfirm \
     bash-completion \
     chezmoi \
     curl \

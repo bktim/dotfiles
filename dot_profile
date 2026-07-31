@@ -48,4 +48,6 @@ export EDITOR=nvim
 export VISUAL=nvim
 export PAGER=less
 
+# Disable oh-my-openagent anonymous telemetry (PostHog)
 export OMO_SEND_ANONYMOUS_TELEMETRY=0
+export OMO_DISABLE_POSTHOG=1
