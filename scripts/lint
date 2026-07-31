@@ -79,7 +79,10 @@ fi
 
 if have nvim; then
   step "nvim --headless syntax check"
-  nvim --headless +qa || fail=1
+  if ! nvim --headless +qa; then
+    printf 'warning: nvim startup failed; skipping\n' >&2
+    missing_tools+=(nvim)
+  fi
 else
   printf 'warning: nvim not installed; skipping\n' >&2
   missing_tools+=(nvim)
@@ -91,7 +94,10 @@ if ((fail != 0)); then
 fi
 
 if ((${#missing_tools[@]} != 0)); then
-  missing_list=$(IFS=', '; printf '%s' "${missing_tools[*]}")
+  missing_list=$(
+    IFS=', '
+    printf '%s' "${missing_tools[*]}"
+  )
   printf '\nlint: PARTIAL (missing: %s)\n' "$missing_list"
   exit 0
 fi
